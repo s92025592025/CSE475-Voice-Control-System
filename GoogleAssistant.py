@@ -6,6 +6,7 @@ import google.oauth2.credentials
 import google.auth.transport.requests
 import google.auth.transport.grpc
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
+from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -93,7 +94,7 @@ class GoogleAssistant:
 		self.audioSource = self.audioDevice
 		self.audioSink = self.audioDevice
 
-		self.conversation_stream = audio_helpers.ConversationStream(
+		self.conversationStream = audio_helpers.ConversationStream(
 										source=self.audioSource,
 										sink=self.audioSink,
 										iter_size=self.audio_iter_size,
@@ -108,9 +109,64 @@ class GoogleAssistant:
 		print("StartAssist() Not implemented")
 		self.__assistantAudioSetup()
 
+		self.conversationStream.start_recording()
+		print("Google Assistant listening...")
+
+		for response in self.assistant.Assist(self.converseRequestGenerator(), 
+											  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
+			print("Get Assist Response")
 
 	"""
-	Generates the conversation request for Google Assistant API
+	Do various action according to received response
+	@param response - The response sent back from Assistant
+	"""
+	def responseAction(self, response):
+		print("In responseAction")
+
+		# If the user utterance has endded
+		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
+			print("End of Utterance")
+			self.conversationStream.stop_recording()
+			print("G Assistant Stop recording")
+		
+		# If we got the transcript of the user speech
+		if resp.speech_results:
+			print("Speech result: ".join(t.transcript for t in response.speech_results))
+
+		# If there is audio to output to the user
+		if len(response.audio_out.audio_data) > 0:
+			print("Has audio to output")
+			# If the device is not playing audio output
+			if not self.conversationStream.playing:
+				print("Currently not playing audio")
+				self.conversationStream.stop_recording()
+				print("Stop recording")
+				self.conversationStream.start_playback()
+				print("Playback start")
+
+			self.conversationStream.write(response.audio_out.audio_data)
+
+	"""
+	Yields: AssistRequest messages to send to the API.
 	"""
 	def converseRequestGenerator(self):
 		print("converseRequestGenerator() Not yet implemented")
+		assistantConfig = embedded_assistant_pb2.AssistConfig(
+					audio_in_config=embedded_assistant_pb2.AudioInConfig(
+						encoding='LINEAR16',
+						sample_rate_hertz=self.conversationStream.sample_rate,
+					),
+					audio_out_config=embedded_assistant_pb2.AudioOutConfig(
+						encoding='LINEAR16',
+						sample_rate_hertz=self.conversationStream.sample_rate,
+						volume_percentage=self.conversationStream.volume_percentage,
+					),
+				)
+
+		# The first request to send the the metadata about the voice request
+		yield embedded_assistant_pb2.AssistRequest(config=assistantConfig)
+
+		# Send the rest of the audio data
+		for audioData in self.conversationStream:
+			print("In Request Gen")
+			yield embedded_assistant_pb2.AssistRequest(audio_in=audioData)

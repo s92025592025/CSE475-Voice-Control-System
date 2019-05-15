@@ -1,7 +1,9 @@
 import snowboydecoder
 import sys
 import signal
+
 from GoogleAssistant import GoogleAssistant
+
 
 interrupted = False
 
