@@ -25,12 +25,19 @@ Authenticate this device by searching default json location
 def gAssisantAuth():
 	try:
 		with io.open(CREDENTIAL_FILE, 'r') as f:
+			# Validate credential
 			credential = google.oauth2.credentials.Credentials(token=None, 
 																**json.load(f))
+
+			# Get an HTTP request function to refresh credentials.
+			http_request = google.auth.transport.requests.Request()
+
+			# Refresh the credential, don't know why but won't hurt
+			credential.refresh()
 			print("Credential Verified")
 	except Exception as e:
 		print("Something is wrong with the credential. ", e)
-		sys.exit(-1);
+		sys.exit(-1)
 
 if len(sys.argv) == 1:
     print("Error: need to specify model name")
