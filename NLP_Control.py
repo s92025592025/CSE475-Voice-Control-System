@@ -1,13 +1,7 @@
 import snowboydecoder
 import sys
 import signal
-import io
-import json
-import click
-import google.oauth2.credentials
-import google.auth.transport.requests
-
-CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
+from GoogleAssistant import GoogleAssistant
 
 interrupted = False
 
@@ -20,26 +14,6 @@ def interrupt_callback():
     global interrupted
     return interrupted
 
-"""
-Authenticate this device by searching default json location
-"""
-def gAssisantAuth():
-	try:
-		with io.open(CREDENTIAL_FILE, 'r') as f:
-			# Validate credential
-			credential = google.oauth2.credentials.Credentials(token=None, 
-																**json.load(f))
-
-			# Get an HTTP request function to refresh credentials.
-			http_request = google.auth.transport.requests.Request()
-
-			# Refresh the credential, don't know why but won't hurt
-			credential.refresh(http_request)
-			print("Credential Verified")
-	except Exception as e:
-		print("Something is wrong with the credential. ", e)
-		sys.exit(-1)
-
 if len(sys.argv) == 1:
     print("Error: need to specify model name")
     print("Usage: python demo.py your.model")
@@ -47,7 +21,9 @@ if len(sys.argv) == 1:
 
 model = sys.argv[1]
 
-gAssisantAuth()
+#assistantChannel = gAssisantAuth()
+assistant = GoogleAssistant()
+assistantChannel = assistant.authentication()
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
