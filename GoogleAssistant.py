@@ -24,13 +24,13 @@ class GoogleAssistant:
 
 	def __init__(self):
 		self.__CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
-		self.authentication()
+		self.__authentication()
 
 	
 	"""
 	Authenticate this device by searching default json location
 	"""
-	def authentication(self):
+	def __authentication(self):
 		try:
 			with io.open(self.__CREDENTIAL_FILE, 'r') as f:
 				# Validate credential
