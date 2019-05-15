@@ -27,10 +27,29 @@ class GoogleAssistant:
 
 	def __init__(self):
 		self.__CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
+		deviceConfigFile = click.get_app_dir('googlesamples-assistant') + "/device_config.json"
+		self.__deviceInformation(deviceConfigFile)
 		self.__authentication()
 		self.__audioSetup()
 		self.__create_assistant()
 
+	"""
+	Grabs the device information for this assistant session
+	@param configPath = The path to the device_config.json file
+	@effects modelId - Sets to the model id of the device_config.json file
+	@effects id - Sets to the id of the device_config.json file
+	@effects clientType - Sets to the client_type if the device_config.json file
+	"""
+	def __deviceInformation(self, configPath):
+		try:
+			with io.open(configPath) as configFile:
+				configJson = json.load(configFile)
+				self.modelId = configJson['model_id']
+				self.deviceId = configJson['id']
+				self.clientType = configJson['client_type']
+		except Exception as e:
+			print("Read device config fail ", e)
+			sys.exit(-1)
 	
 	"""
 	Authenticate this device by searching default json location
@@ -160,6 +179,10 @@ class GoogleAssistant:
 						encoding='LINEAR16',
 						sample_rate_hertz=self.conversationStream.sample_rate,
 						volume_percentage=self.conversationStream.volume_percentage,
+					),
+					device_config=embedded_assistant_pb2.DeviceConfig(
+						device_id=self.deviceId,
+						device_model_id=self.modelId,
 					),
 				)
 
