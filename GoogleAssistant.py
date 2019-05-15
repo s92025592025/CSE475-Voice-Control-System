@@ -135,6 +135,14 @@ class GoogleAssistant:
 			print("Get Assist Response")
 			self.responseAction(response)
 
+		# Make audio devices free for snowboy
+		try:
+			self.conversationStream.close()
+			print("G Assistant closed conversation stream")
+		except Exception as e:
+			print("G Assistant can't close conversation stream", e)
+			sys.exit(-1)
+
 	"""
 	Do various action according to received response
 	@param response - The response sent back from Assistant

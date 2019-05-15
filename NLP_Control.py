@@ -20,6 +20,7 @@ def detectedCallback():
 	detector.terminate() # So google Assistant can use audio device
 	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING);
 	assistant.startAssist()
+	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
 	detector.start(detected_callback=detectedCallback,
 					interrupt_check=interrupt_callback,
 		            sleep_time=0.03)
