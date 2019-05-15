@@ -149,7 +149,7 @@ class GoogleAssistant:
 			print("G Assistant Stop recording")
 		
 		# If we got the transcript of the user speech
-		if resp.speech_results:
+		if response.speech_results:
 			print("Speech result: ".join(t.transcript for t in response.speech_results))
 
 		# If there is audio to output to the user
