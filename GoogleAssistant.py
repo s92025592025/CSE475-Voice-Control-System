@@ -53,6 +53,9 @@ class GoogleAssistant:
 
 
 
+	"""
+	Setup audio information for before starting the assistant service
+	"""
 	def __audioSetup(self):
 		self.audio_sample_rate = audio_helpers.DEFAULT_AUDIO_SAMPLE_RATE
 		self.audio_sample_width = audio_helpers.DEFAULT_AUDIO_SAMPLE_WIDTH
@@ -63,6 +66,10 @@ class GoogleAssistant:
 		self.conversation_state_bytes = None
 		self.volume_percentage = 50
 
+	"""
+	Creates the Google Assistant API gRPC client, should be called before
+	evoking an Assistant service
+	"""
 	def __create_assistant(self):
 		self.channel = google.auth.transport.grpc.secure_authorized_channel(
 												self.credential,
@@ -71,3 +78,24 @@ class GoogleAssistant:
 		print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
 		print("Created Google Assistant API gRPC client.")
+
+	"""
+	Setup audio device information for Assistant API to read the audio request
+	"""
+	def __assistantAudioSetup(self):
+		self.audioDevice = audio_helpers.SoundDeviceStream(
+											sample_rate=self.audio_sample_rate,
+							                sample_width=self.audio_sample_width,
+											block_size=self.audio_block_size,
+											flush_size=self.audio_flush_size
+										)
+
+		self.audioSource = self.audioDevice
+		self.audioSink = self.audioDevice
+
+
+	"""
+	Start a Assistant request
+	"""
+	def startAssist(self):
+		print("Not implemented")
