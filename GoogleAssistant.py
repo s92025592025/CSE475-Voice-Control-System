@@ -70,3 +70,4 @@ class GoogleAssistant:
 												GoogleAssistant.ASSISTANT_API_ENDPOINT)
 		print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
+		print("Created Google Assistant API gRPC client.")
