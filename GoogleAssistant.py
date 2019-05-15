@@ -105,7 +105,7 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
-		print("Not implemented")
+		print("StartAssist() Not implemented")
 		self.__assistantAudioSetup()
 
 
@@ -113,4 +113,4 @@ class GoogleAssistant:
 	Generates the conversation request for Google Assistant API
 	"""
 	def converseRequestGenerator(self):
-		print("Not yet implemented")
+		print("converseRequestGenerator() Not yet implemented")

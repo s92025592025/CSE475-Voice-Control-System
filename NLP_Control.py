@@ -15,8 +15,12 @@ def interrupt_callback():
     return interrupted
 
 def detectedCallback():
+	detector.terminate() # So google Assistant can use audio device
 	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING);
 	assistant.startAssist()
+	detector.start(detected_callback=detectedCallback,
+					interrupt_check=interrupt_callback,
+		            sleep_time=0.03)
 
 if len(sys.argv) == 1:
     print("Error: need to specify model name")
@@ -36,7 +40,7 @@ detector = snowboydecoder.HotwordDetector(model, sensitivity=0.5)
 print('Listening... Press Ctrl+C to exit')
 
 # main loop
-detector.start(detected_callback=snowboydecoder.play_audio_file,
+detector.start(detected_callback=detectedCallback,#snowboydecoder.play_audio_file,
                interrupt_check=interrupt_callback,
                sleep_time=0.03)
 
