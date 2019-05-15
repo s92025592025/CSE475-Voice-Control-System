@@ -23,7 +23,7 @@ model = sys.argv[1]
 
 #assistantChannel = gAssisantAuth()
 assistant = GoogleAssistant()
-assistantChannel = assistant.authentication()
+#assistantChannel = assistant.authentication()
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
