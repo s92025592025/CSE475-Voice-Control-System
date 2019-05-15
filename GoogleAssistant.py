@@ -93,9 +93,24 @@ class GoogleAssistant:
 		self.audioSource = self.audioDevice
 		self.audioSink = self.audioDevice
 
+		self.conversation_stream = audio_helpers.ConversationStream(
+										source=self.audioSource,
+										sink=self.audioSink,
+										iter_size=self.audio_iter_size,
+										sample_width=self.audio_sample_width
+									)
+
 
 	"""
 	Start a Assistant request
 	"""
 	def startAssist(self):
 		print("Not implemented")
+		self.__assistantAudioSetup()
+
+
+	"""
+	Generates the conversation request for Google Assistant API
+	"""
+	def converseRequestGenerator(self):
+		print("Not yet implemented")

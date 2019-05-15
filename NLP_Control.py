@@ -14,6 +14,10 @@ def interrupt_callback():
     global interrupted
     return interrupted
 
+def detectedCallback():
+	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING);
+	assistant.startAssist()
+
 if len(sys.argv) == 1:
     print("Error: need to specify model name")
     print("Usage: python demo.py your.model")
@@ -23,7 +27,6 @@ model = sys.argv[1]
 
 #assistantChannel = gAssisantAuth()
 assistant = GoogleAssistant()
-#assistantChannel = assistant.authentication()
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
