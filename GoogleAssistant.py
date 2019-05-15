@@ -125,7 +125,6 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
-		print("StartAssist() Not implemented")
 		self.__assistantAudioSetup()
 
 		self.conversationStream.start_recording()
@@ -134,6 +133,7 @@ class GoogleAssistant:
 		for response in self.assistant.Assist(self.converseRequestGenerator(), 
 											  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
 			print("Get Assist Response")
+			self.responseAction(response)
 
 	"""
 	Do various action according to received response
@@ -169,7 +169,6 @@ class GoogleAssistant:
 	Yields: AssistRequest messages to send to the API.
 	"""
 	def converseRequestGenerator(self):
-		print("converseRequestGenerator() Not yet implemented")
 		assistantConfig = embedded_assistant_pb2.AssistConfig(
 					audio_in_config=embedded_assistant_pb2.AudioInConfig(
 						encoding='LINEAR16',
