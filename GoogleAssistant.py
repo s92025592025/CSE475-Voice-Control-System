@@ -2,16 +2,20 @@ import click
 import sys
 import io
 import json
+import concurrent.futures
+
 import google.oauth2.credentials
 import google.auth.transport.requests
 import google.auth.transport.grpc
+
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
 
 try:
 	from googlesamples.assistant.grpc import (
 			assistant_helpers,
-			audio_helpers
+			audio_helpers,
+			device_helpers
 	)
 except SystemError:
 	import assistant_helpers
@@ -31,6 +35,7 @@ class GoogleAssistant:
 		self.__deviceInformation(deviceConfigFile)
 		self.__authentication()
 		self.__audioSetup()
+		self.deviceHandler = self.__deviceHandlerSetup()
 		self.__create_assistant()
 
 	"""
@@ -71,6 +76,22 @@ class GoogleAssistant:
 			print("Something is wrong with the credential. ", e)
 			sys.exit(-1)
 
+	"""
+	Sets up the device handler for this device. Must be set after device id
+	was set
+	"""
+	def __deviceHandlerSetup(self):
+		print("In device handler setup")
+		deviceHandler = device_helpers.DeviceRequestHandler(self.deviceId)
+
+		@deviceHandler.command('action.devices.commands.OnOff')
+		def onoff(on):
+			if on:
+				print("Turned on")
+			else:
+				print("Turned off")
+
+		return deviceHandler
 
 
 	"""
@@ -131,6 +152,7 @@ class GoogleAssistant:
 	def startAssist(self):
 		self.__assistantAudioSetup()
 
+		runningActions = []
 		ongoingConversation = True
 
 		while ongoingConversation:
@@ -140,6 +162,20 @@ class GoogleAssistant:
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
 				ongoingConversation = self.responseAction(response, ongoingConversation)
+
+				if response.device_action.device_request_json:
+					print("Responed device action")
+					actionRequest = json.loads(response.device_action.device_request_json)
+
+					# Received a handler to run
+					fs = self.deviceHandler(actionRequest)
+					# Check if there is a handler
+					if fs:
+						runningActions.extend(fs)
+
+			if len(runningActions):
+				print("Should wait for device action to be done: ", len(runningActions))
+				concurrent.futures.wait(runningActions)
 
 			self.conversationStream.stop_playback() # Has to be after all the responese
 													# were done otherwise the Google
