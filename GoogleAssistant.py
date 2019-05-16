@@ -98,6 +98,8 @@ class GoogleAssistant:
 		print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
 		print("Created Google Assistant API gRPC client.")
+		# To enable conversation with Google Assitant
+		self.conversationStateBytes = None
 
 	"""
 	Setup audio device information for Assistant API to read the audio request
@@ -127,13 +129,18 @@ class GoogleAssistant:
 	def startAssist(self):
 		self.__assistantAudioSetup()
 
-		self.conversationStream.start_recording()
-		print("Google Assistant listening...")
+		ongoingConversation = True
 
-		for response in self.assistant.Assist(self.converseRequestGenerator(), 
-											  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
-			print("Get Assist Response")
-			self.responseAction(response)
+		while ongoingConversation:
+			ongoingConversation = False # Set to false for now, flip back to true
+										# if further conversation is needed
+			self.conversationStream.start_recording()
+			print("Google Assistant listening...")
+
+			for response in self.assistant.Assist(self.converseRequestGenerator(), 
+												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
+				print("Get Assist Response")
+				self.responseAction(response)
 
 		# Make audio devices free for snowboy
 		try:
