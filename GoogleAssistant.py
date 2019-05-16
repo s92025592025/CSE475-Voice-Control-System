@@ -100,6 +100,8 @@ class GoogleAssistant:
 		print("Created Google Assistant API gRPC client.")
 		# To enable conversation with Google Assitant
 		self.conversationStateBytes = None
+		self.isNewConversation = True # Whenever API client is created, must be 
+									  # new conversation
 
 	"""
 	Setup audio device information for Assistant API to read the audio request
@@ -132,15 +134,17 @@ class GoogleAssistant:
 		ongoingConversation = True
 
 		while ongoingConversation:
-			ongoingConversation = False # Set to false for now, flip back to true
-										# if further conversation is needed
 			self.conversationStream.start_recording()
 			print("Google Assistant listening...")
 
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
-				print("Get Assist Response")
-				self.responseAction(response)
+				ongoingConversation = self.responseAction(response)
+
+			self.conversationStream.stop_playback() # Has to be after all the responese
+													# were done otherwise the Google
+													# Assistant audio output will be shred
+													# into pieces
 
 		# Make audio devices free for snowboy
 		try:
@@ -153,6 +157,8 @@ class GoogleAssistant:
 	"""
 	Do various action according to received response
 	@param response - The response sent back from Assistant
+	@returns Whether need to continue the conversation or not. 
+			 True if further conversation is needed, False otherwise
 	"""
 	def responseAction(self, response):
 		print("In responseAction")
@@ -180,6 +186,20 @@ class GoogleAssistant:
 
 			self.conversationStream.write(response.audio_out.audio_data)
 
+		# Update conversation state
+		if response.dialog_state_out.conversation_state:
+			self.conversationStateBytes = response.dialog_state_out.conversation_state
+			print("Updated convresation state")
+
+		# If Google Assistant needs a follow up, make all audio device available
+		# before call startAssist() again
+		if response.dialog_state_out.microphone_mode == embedded_assistant_pb2.DialogStateOut.CLOSE_MICROPHONE:
+			print("Google Assitant wants to talk more")
+
+			return False
+
+		return True
+
 	"""
 	Yields: AssistRequest messages to send to the API.
 	"""
@@ -198,6 +218,11 @@ class GoogleAssistant:
 						device_id=self.deviceId,
 						device_model_id=self.modelId,
 					),
+					dialog_state_in=embedded_assistant_pb2.DialogStateIn(
+						language_code='en-US',
+						conversation_state=self.conversationStateBytes,
+						is_new_conversation=self.isNewConversation,
+					),
 				)
 
 		# The first request to send the the metadata about the voice request
@@ -205,5 +230,4 @@ class GoogleAssistant:
 
 		# Send the rest of the audio data
 		for audioData in self.conversationStream:
-			print("In Request Gen")
 			yield embedded_assistant_pb2.AssistRequest(audio_in=audioData)
