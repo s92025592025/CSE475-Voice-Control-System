@@ -139,7 +139,7 @@ class GoogleAssistant:
 
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
-				ongoingConversation = self.responseAction(response)
+				ongoingConversation = self.responseAction(response, ongoingConversation)
 
 			self.conversationStream.stop_playback() # Has to be after all the responese
 													# were done otherwise the Google
@@ -157,10 +157,12 @@ class GoogleAssistant:
 	"""
 	Do various action according to received response
 	@param response - The response sent back from Assistant
+	@param furtherConversation - The current state of whether need to
+								 have further conversation or not
 	@returns Whether need to continue the conversation or not. 
 			 True if further conversation is needed, False otherwise
 	"""
-	def responseAction(self, response):
+	def responseAction(self, response, furtherConversation):
 		print("In responseAction")
 
 		# If the user utterance has endded
@@ -193,12 +195,19 @@ class GoogleAssistant:
 
 		# If Google Assistant needs a follow up, make all audio device available
 		# before call startAssist() again
-		if response.dialog_state_out.microphone_mode == embedded_assistant_pb2.DialogStateOut.CLOSE_MICROPHONE:
+		if response.dialog_state_out.microphone_mode == embedded_assistant_pb2.DialogStateOut.DIALOG_FOLLOW_ON:
 			print("Google Assitant wants to talk more")
-
+			return True
+		
+		# If Google Assistant decided to shutdown the mic, a.k.a she thinks 
+		# you are annoying and don't want to listen 2 u
+		if response.dialog_state_out.microphone_mode == embedded_assistant_pb2.DialogStateOut.CLOSE_MICROPHONE:
+			print("Google Assistant don't want to listen 2 u")
 			return False
 
-		return True
+		return furtherConversation
+
+
 
 	"""
 	Yields: AssistRequest messages to send to the API.
