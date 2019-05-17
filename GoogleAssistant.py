@@ -91,6 +91,10 @@ class GoogleAssistant:
 			else:
 				print("Turned off")
 
+		@deviceHandler.command('action.devices.commands.ThanosSnap')
+		def ThanosSnap():
+			print("I use the stones to destroy the stones")
+
 		return deviceHandler
 
 
