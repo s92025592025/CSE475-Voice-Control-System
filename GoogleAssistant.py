@@ -100,16 +100,6 @@ class GoogleAssistant:
 			else:
 				print("Turned off")
 
-		"""
-		@deviceHandler.command('action.devices.commands.ThanosSnap')
-		def ThanosSnap():
-			print("I use the stones to destroy the stones")
-
-		@deviceHandler.command('com.example.commands.BlinkLight')
-		def blink(speed, number):
-			print("Can print ", speed, " ", number, "of times")
-		"""
-
 		return deviceHandler
 
 
@@ -135,9 +125,7 @@ class GoogleAssistant:
 												self.credential,
 												self.http_request,
 												GoogleAssistant.ASSISTANT_API_ENDPOINT)
-		#print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
-		#print("Created Google Assistant API gRPC client.")
 		# To enable conversation with Google Assitant
 		self.conversationStateBytes = None
 		self.isNewConversation = True # Whenever API client is created, must be 
@@ -173,6 +161,7 @@ class GoogleAssistant:
 
 		runningActions = []
 		ongoingConversation = True
+		isCustomCommand = False
 
 		while ongoingConversation:
 			self.conversationStream.start_recording()
@@ -181,6 +170,18 @@ class GoogleAssistant:
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
 				ongoingConversation = self.__responseAction(response, ongoingConversation)
+
+				# If we got the transcript of the user speech
+				if response.speech_results:
+					result = "".join(t.transcript for t in response.speech_results)
+					print("Speech result: ", result)
+
+					isCustomCommand = self.__customCommands(result)
+					if isCustomCommand:
+						self.conversationStream.stop_recording()
+						self.conversationStream.stop_playback()
+						# Is custom command, break out the loop
+						break
 
 				if response.device_action.device_request_json:
 					#print("Responed device action")
@@ -191,6 +192,10 @@ class GoogleAssistant:
 					# Check if there is a handler
 					if fs:
 						runningActions.extend(fs)
+
+			if isCustomCommand:
+				# Is custom command, break out the loop
+				break
 
 			if len(runningActions):
 				print("Should wait for device action to be done: ", len(runningActions))
@@ -224,30 +229,19 @@ class GoogleAssistant:
 			print("End of Utterance")
 			self.conversationStream.stop_recording()
 			print("G Assistant Stop recording")
-		
-		# If we got the transcript of the user speech
-		if response.speech_results:
-			result = "".join(t.transcript for t in response.speech_results)
-			print("Speech result: ", result)
-			self.__customCommands(result)
 
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
-			#print("Has audio to output")
 			# If the device is not playing audio output
 			if not self.conversationStream.playing:
-				#print("Currently not playing audio")
 				self.conversationStream.stop_recording()
-				#print("Stop recording")
 				self.conversationStream.start_playback()
-				#print("Playback start")
 
 			self.conversationStream.write(response.audio_out.audio_data)
 
 		# Update conversation state
 		if response.dialog_state_out.conversation_state:
 			self.conversationStateBytes = response.dialog_state_out.conversation_state
-			print("Updated convresation state")
 
 		# If Google Assistant needs a follow up, make all audio device available
 		# before call startAssist() again
@@ -272,28 +266,42 @@ class GoogleAssistant:
 		- Initinate Self Destruction Sequence
 		- Read your tweet
 	@param command - The command issued by the user
+	@return True if command is a custom command, otherwise False
 	"""
 	def __customCommands(self, command):
+		isCommand = False
+
 		# Play music
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
 			print("Play Music detected")
+
+			return True
 
 		# Switch mode
 		if GoogleAssistant.SWITCH_MODE_REG.match(command):
 			print("Swithing mode")
 
+			return True
+
 		# Thanos snap
 		if GoogleAssistant.THANOS_SNAP_REG.match(command):
 			print("You should have gone for the head")
+
+			return True
 
 		# Self destruct
 		if GoogleAssistant.SELF_DESTRUCT_REG.match(command):
 			print("Self destruction")
 
+			return True
+
 		# Read Elon Musk tweet
 		if GoogleAssistant.READ_TWEET_REG.match(command):
 			print("Read tweet")
 
+			return True
+
+		return False
 
 	"""
 	Yields: AssistRequest messages to send to the API.
