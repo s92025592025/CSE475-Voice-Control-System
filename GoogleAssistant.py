@@ -2,6 +2,7 @@ import click
 import sys
 import io
 import json
+import re
 import concurrent.futures
 
 import google.oauth2.credentials
@@ -28,6 +29,14 @@ communication process with Google Assistant SDK(Service)
 class GoogleAssistant:
 	ASSISTANT_API_ENDPOINT = 'embeddedassistant.googleapis.com'
 	DEFAULT_GRPC_DEADLINE = 60 * 3 + 5
+
+	# Custom command regexs
+	PLAY_MUSIC_REG = re.compile("play [a-z]", re.I)
+	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
+	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
+	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
+	READ_TWEET_REG = re.compile("read your tweet", re.I)
+
 
 	def __init__(self):
 		self.__CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
@@ -252,6 +261,17 @@ class GoogleAssistant:
 
 		return furtherConversation
 
+	"""
+	Deals with the commands that is custom to this device. Current know custom commands
+	are as follows:
+		- Play <Music name/Playlist>
+		- Switch [Manual/Autonomous] mode
+		- Thanos Snap
+		- Initinate Self Destruction Sequence
+		- Read your tweet
+	@param command - The command issued by the user
+	"""
+	def customCommands(self, command):
 
 
 	"""
