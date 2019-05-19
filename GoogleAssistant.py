@@ -91,9 +91,15 @@ class GoogleAssistant:
 			else:
 				print("Turned off")
 
+		"""
 		@deviceHandler.command('action.devices.commands.ThanosSnap')
 		def ThanosSnap():
 			print("I use the stones to destroy the stones")
+
+		@deviceHandler.command('com.example.commands.BlinkLight')
+		def blink(speed, number):
+			print("Can print ", speed, " ", number, "of times")
+		"""
 
 		return deviceHandler
 
@@ -120,9 +126,9 @@ class GoogleAssistant:
 												self.credential,
 												self.http_request,
 												GoogleAssistant.ASSISTANT_API_ENDPOINT)
-		print("GRPC Channel Created")
+		#print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
-		print("Created Google Assistant API gRPC client.")
+		#print("Created Google Assistant API gRPC client.")
 		# To enable conversation with Google Assitant
 		self.conversationStateBytes = None
 		self.isNewConversation = True # Whenever API client is created, must be 
@@ -168,7 +174,7 @@ class GoogleAssistant:
 				ongoingConversation = self.responseAction(response, ongoingConversation)
 
 				if response.device_action.device_request_json:
-					print("Responed device action")
+					#print("Responed device action")
 					actionRequest = json.loads(response.device_action.device_request_json)
 
 					# Received a handler to run
@@ -203,7 +209,6 @@ class GoogleAssistant:
 			 True if further conversation is needed, False otherwise
 	"""
 	def responseAction(self, response, furtherConversation):
-		print("In responseAction")
 
 		# If the user utterance has endded
 		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
@@ -217,14 +222,14 @@ class GoogleAssistant:
 
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
-			print("Has audio to output")
+			#print("Has audio to output")
 			# If the device is not playing audio output
 			if not self.conversationStream.playing:
-				print("Currently not playing audio")
+				#print("Currently not playing audio")
 				self.conversationStream.stop_recording()
-				print("Stop recording")
+				#print("Stop recording")
 				self.conversationStream.start_playback()
-				print("Playback start")
+				#print("Playback start")
 
 			self.conversationStream.write(response.audio_out.audio_data)
 
