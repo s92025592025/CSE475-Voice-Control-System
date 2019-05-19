@@ -180,7 +180,7 @@ class GoogleAssistant:
 
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
-				ongoingConversation = self.responseAction(response, ongoingConversation)
+				ongoingConversation = self.__responseAction(response, ongoingConversation)
 
 				if response.device_action.device_request_json:
 					#print("Responed device action")
@@ -217,7 +217,7 @@ class GoogleAssistant:
 	@returns Whether need to continue the conversation or not. 
 			 True if further conversation is needed, False otherwise
 	"""
-	def responseAction(self, response, furtherConversation):
+	def __responseAction(self, response, furtherConversation):
 
 		# If the user utterance has endded
 		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
@@ -227,7 +227,9 @@ class GoogleAssistant:
 		
 		# If we got the transcript of the user speech
 		if response.speech_results:
-			print("Speech result: ".join(t.transcript for t in response.speech_results))
+			result = "".join(t.transcript for t in response.speech_results)
+			print("Speech result: ", result)
+			self.__customCommands(result)
 
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
@@ -271,7 +273,26 @@ class GoogleAssistant:
 		- Read your tweet
 	@param command - The command issued by the user
 	"""
-	def customCommands(self, command):
+	def __customCommands(self, command):
+		# Play music
+		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
+			print("Play Music detected")
+
+		# Switch mode
+		if GoogleAssistant.SWITCH_MODE_REG.match(command):
+			print("Swithing mode")
+
+		# Thanos snap
+		if GoogleAssistant.THANOS_SNAP_REG.match(command):
+			print("You should have gone for the head")
+
+		# Self destruct
+		if GoogleAssistant.SELF_DESTRUCT_REG.match(command):
+			print("Self destruction")
+
+		# Read Elon Musk tweet
+		if GoogleAssistant.READ_TWEET_REG.match(command):
+			print("Read tweet")
 
 
 	"""
