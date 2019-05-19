@@ -2,16 +2,21 @@ import click
 import sys
 import io
 import json
+import re
+import concurrent.futures
+
 import google.oauth2.credentials
 import google.auth.transport.requests
 import google.auth.transport.grpc
+
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
 
 try:
 	from googlesamples.assistant.grpc import (
 			assistant_helpers,
-			audio_helpers
+			audio_helpers,
+			device_helpers
 	)
 except SystemError:
 	import assistant_helpers
@@ -25,12 +30,21 @@ class GoogleAssistant:
 	ASSISTANT_API_ENDPOINT = 'embeddedassistant.googleapis.com'
 	DEFAULT_GRPC_DEADLINE = 60 * 3 + 5
 
+	# Custom command regexs
+	PLAY_MUSIC_REG = re.compile("play [a-z]", re.I)
+	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
+	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
+	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
+	READ_TWEET_REG = re.compile("read your tweet", re.I)
+
+
 	def __init__(self):
 		self.__CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
 		deviceConfigFile = click.get_app_dir('googlesamples-assistant') + "/device_config.json"
 		self.__deviceInformation(deviceConfigFile)
 		self.__authentication()
 		self.__audioSetup()
+		self.deviceHandler = self.__deviceHandlerSetup()
 		self.__create_assistant()
 
 	"""
@@ -71,6 +85,22 @@ class GoogleAssistant:
 			print("Something is wrong with the credential. ", e)
 			sys.exit(-1)
 
+	"""
+	Sets up the device handler for this device. Must be set after device id
+	was set
+	"""
+	def __deviceHandlerSetup(self):
+		print("In device handler setup")
+		deviceHandler = device_helpers.DeviceRequestHandler(self.deviceId)
+
+		@deviceHandler.command('action.devices.commands.OnOff')
+		def onoff(on):
+			if on:
+				print("Turned on")
+			else:
+				print("Turned off")
+
+		return deviceHandler
 
 
 	"""
@@ -95,9 +125,7 @@ class GoogleAssistant:
 												self.credential,
 												self.http_request,
 												GoogleAssistant.ASSISTANT_API_ENDPOINT)
-		print("GRPC Channel Created")
 		self.assistant = embedded_assistant_pb2_grpc.EmbeddedAssistantStub(self.channel)
-		print("Created Google Assistant API gRPC client.")
 		# To enable conversation with Google Assitant
 		self.conversationStateBytes = None
 		self.isNewConversation = True # Whenever API client is created, must be 
@@ -131,7 +159,9 @@ class GoogleAssistant:
 	def startAssist(self):
 		self.__assistantAudioSetup()
 
+		runningActions = []
 		ongoingConversation = True
+		isCustomCommand = False
 
 		while ongoingConversation:
 			self.conversationStream.start_recording()
@@ -139,7 +169,37 @@ class GoogleAssistant:
 
 			for response in self.assistant.Assist(self.converseRequestGenerator(), 
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
-				ongoingConversation = self.responseAction(response, ongoingConversation)
+				ongoingConversation = self.__responseAction(response, ongoingConversation)
+
+				# If we got the transcript of the user speech
+				if response.speech_results:
+					result = "".join(t.transcript for t in response.speech_results)
+					print("Speech result: ", result)
+
+					isCustomCommand = self.__customCommands(result)
+					if isCustomCommand:
+						self.conversationStream.stop_recording()
+						self.conversationStream.stop_playback()
+						# Is custom command, break out the loop
+						break
+
+				if response.device_action.device_request_json:
+					#print("Responed device action")
+					actionRequest = json.loads(response.device_action.device_request_json)
+
+					# Received a handler to run
+					fs = self.deviceHandler(actionRequest)
+					# Check if there is a handler
+					if fs:
+						runningActions.extend(fs)
+
+			if isCustomCommand:
+				# Is custom command, break out the loop
+				break
+
+			if len(runningActions):
+				print("Should wait for device action to be done: ", len(runningActions))
+				concurrent.futures.wait(runningActions)
 
 			self.conversationStream.stop_playback() # Has to be after all the responese
 													# were done otherwise the Google
@@ -162,36 +222,26 @@ class GoogleAssistant:
 	@returns Whether need to continue the conversation or not. 
 			 True if further conversation is needed, False otherwise
 	"""
-	def responseAction(self, response, furtherConversation):
-		print("In responseAction")
+	def __responseAction(self, response, furtherConversation):
 
 		# If the user utterance has endded
 		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
 			print("End of Utterance")
 			self.conversationStream.stop_recording()
 			print("G Assistant Stop recording")
-		
-		# If we got the transcript of the user speech
-		if response.speech_results:
-			print("Speech result: ".join(t.transcript for t in response.speech_results))
 
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
-			print("Has audio to output")
 			# If the device is not playing audio output
 			if not self.conversationStream.playing:
-				print("Currently not playing audio")
 				self.conversationStream.stop_recording()
-				print("Stop recording")
 				self.conversationStream.start_playback()
-				print("Playback start")
 
 			self.conversationStream.write(response.audio_out.audio_data)
 
 		# Update conversation state
 		if response.dialog_state_out.conversation_state:
 			self.conversationStateBytes = response.dialog_state_out.conversation_state
-			print("Updated convresation state")
 
 		# If Google Assistant needs a follow up, make all audio device available
 		# before call startAssist() again
@@ -207,7 +257,51 @@ class GoogleAssistant:
 
 		return furtherConversation
 
+	"""
+	Deals with the commands that is custom to this device. Current know custom commands
+	are as follows:
+		- Play <Music name/Playlist>
+		- Switch [Manual/Autonomous] mode
+		- Thanos Snap
+		- Initinate Self Destruction Sequence
+		- Read your tweet
+	@param command - The command issued by the user
+	@return True if command is a custom command, otherwise False
+	"""
+	def __customCommands(self, command):
+		isCommand = False
 
+		# Play music
+		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
+			print("Play Music detected")
+
+			return True
+
+		# Switch mode
+		if GoogleAssistant.SWITCH_MODE_REG.match(command):
+			print("Swithing mode")
+
+			return True
+
+		# Thanos snap
+		if GoogleAssistant.THANOS_SNAP_REG.match(command):
+			print("You should have gone for the head")
+
+			return True
+
+		# Self destruct
+		if GoogleAssistant.SELF_DESTRUCT_REG.match(command):
+			print("Self destruction")
+
+			return True
+
+		# Read Elon Musk tweet
+		if GoogleAssistant.READ_TWEET_REG.match(command):
+			print("Read tweet")
+
+			return True
+
+		return False
 
 	"""
 	Yields: AssistRequest messages to send to the API.
