@@ -105,3 +105,5 @@ venv.bak/
 
 # Google Action credential
 creds.data
+
+token.json
