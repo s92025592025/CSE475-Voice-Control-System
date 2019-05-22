@@ -25,9 +25,7 @@ except SystemError:
 
 """
 TODO:
-	* add to queue command
 	* clear queue
-	* switch to next in queue
 """
 
 """
@@ -41,7 +39,10 @@ class GoogleAssistant:
 	# Custom command regexs
 	PLAY_MUSIC_REG = re.compile("play .*", re.I)
 	PAUSE_REG = re.compile("pause", re.I)
+	RESUME_REG = re.compile("resume", re.I)
 	ADD_2_QUEUE_RE = re.compile("put .* to playlist", re.I)
+	NEXT_SONG_RE = re.compile("next song", re.I)
+	PREVIOUS_SONG_RE = re.compile('previous song', re.I)
 	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
 	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
@@ -307,12 +308,39 @@ class GoogleAssistant:
 			
 			return True
 
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
+			print("Resume detected")
+
+			return True
+
+		# Add songs to queue
 		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
 			print("Add 2 Queue detected")
 			songName = command[4:-12]
 			print("Add ", songName)
 			videoId = self.__youtubePlayer.searchSong(songName)
 			self.__youtubePlayer.add2Queue(videoId)
+
+			return True
+
+		# Next song in the playlist
+		if GoogleAssistant.NEXT_SONG_RE.fullmatch(command):
+			print("Next song detected")
+			self.__youtubePlayer.next()
+			self.__youtubePlayer.pause()
+
+			return True
+
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
+			print("Resume detected")
+
+			return True
+
+		# Previous song in playlist
+		if GoogleAssistant.PREVIOUS_SONG_RE.fullmatch(command):
+			print("Previous song detected")
+			self.__youtubePlayer.previous()
+			self.__youtubePlayer.pause()
 
 			return True
 
@@ -366,6 +394,17 @@ class GoogleAssistant:
 
 		# Play music if user add music to queue
 		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
+			return True
+
+		# Play music user want next song
+		if GoogleAssistant.NEXT_SONG_RE.fullmatch(command):
+			return True
+
+		# Play music if user want previous song
+		if GoogleAssistant.PREVIOUS_SONG_RE.fullmatch(command):
+			return True
+
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
 			return True
 
 		# Otherwise depends of whether music is paused before starting the assisatnt

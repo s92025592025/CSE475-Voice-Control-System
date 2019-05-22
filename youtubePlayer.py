@@ -175,6 +175,18 @@ class YoutubePlayer:
 		self.__musicPlayer.stop()
 
 	"""
+	next song in the playlist
+	"""
+	def next(self):
+		self.__musicPlayer.next()
+
+	"""
+	previous sogn in the playlist
+	"""
+	def previous(self):
+		self.__musicPlayer.previous()
+
+	"""
 	@return True if the music player is playing, otherwise False
 	"""
 	def isPlaying(self):
