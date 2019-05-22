@@ -24,11 +24,6 @@ except SystemError:
 	import audio_helpers
 
 """
-TODO:
-	* clear queue
-"""
-
-"""
 This class should serve as the a object that runs the setup and 
 communication process with Google Assistant SDK(Service)
 """
