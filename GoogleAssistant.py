@@ -11,6 +11,7 @@ import google.auth.transport.grpc
 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
+from youtubePlayer import YoutubePlayer
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -31,7 +32,13 @@ class GoogleAssistant:
 	DEFAULT_GRPC_DEADLINE = 60 * 3 + 5
 
 	# Custom command regexs
-	PLAY_MUSIC_REG = re.compile("play [a-z]", re.I)
+	PLAY_MUSIC_REG = re.compile("play .*", re.I)
+	PAUSE_REG = re.compile("pause", re.I)
+	RESUME_REG = re.compile("resume", re.I)
+	ADD_2_QUEUE_RE = re.compile("put .* to playlist", re.I)
+	NEXT_SONG_RE = re.compile("next song", re.I)
+	PREVIOUS_SONG_RE = re.compile('previous song', re.I)
+	CLEAR_QUEUE_RE = re.compile('clear playlist', re.I)
 	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
 	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
@@ -46,6 +53,8 @@ class GoogleAssistant:
 		self.__audioSetup()
 		self.deviceHandler = self.__deviceHandlerSetup()
 		self.__create_assistant()
+
+		self.__youtubePlayer = YoutubePlayer()
 
 	"""
 	Grabs the device information for this assistant session
@@ -157,11 +166,17 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
+		pausedBefore = True
+		if self.__youtubePlayer.isPlaying():
+			pausedBefore = False
+
+		self.__youtubePlayer.pause() # Stop music so Google Assistant can talk
 		self.__assistantAudioSetup()
 
 		runningActions = []
 		ongoingConversation = True
 		isCustomCommand = False
+		userCommand = ""
 
 		while ongoingConversation:
 			self.conversationStream.start_recording()
@@ -171,20 +186,25 @@ class GoogleAssistant:
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
 				ongoingConversation = self.__responseAction(response, ongoingConversation)
 
-				# If we got the transcript of the user speech
-				if response.speech_results:
-					result = "".join(t.transcript for t in response.speech_results)
-					print("Speech result: ", result)
+				# If the user utterance has endded
+				if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
+					print("End of Utterance")
+					print("User said: ", userCommand)
+					self.conversationStream.stop_recording()
+					print("G Assistant Stop recording")
 
-					isCustomCommand = self.__customCommands(result)
+					isCustomCommand = self.__customCommands(userCommand)
 					if isCustomCommand:
 						self.conversationStream.stop_recording()
 						self.conversationStream.stop_playback()
 						# Is custom command, break out the loop
 						break
 
+				# If we got the transcript of the user speech
+				if response.speech_results:
+					userCommand = "".join(t.transcript for t in response.speech_results)
+
 				if response.device_action.device_request_json:
-					#print("Responed device action")
 					actionRequest = json.loads(response.device_action.device_request_json)
 
 					# Received a handler to run
@@ -210,6 +230,9 @@ class GoogleAssistant:
 		try:
 			self.conversationStream.close()
 			print("G Assistant closed conversation stream")
+
+			if self.__resumeMusicAfterAssist(userCommand, pausedBefore):
+				self.__youtubePlayer.play()
 		except Exception as e:
 			print("G Assistant can't close conversation stream", e)
 			sys.exit(-1)
@@ -223,13 +246,6 @@ class GoogleAssistant:
 			 True if further conversation is needed, False otherwise
 	"""
 	def __responseAction(self, response, furtherConversation):
-
-		# If the user utterance has endded
-		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
-			print("End of Utterance")
-			self.conversationStream.stop_recording()
-			print("G Assistant Stop recording")
-
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
 			# If the device is not playing audio output
@@ -269,11 +285,66 @@ class GoogleAssistant:
 	@return True if command is a custom command, otherwise False
 	"""
 	def __customCommands(self, command):
-		isCommand = False
-
 		# Play music
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
 			print("Play Music detected")
+			songName = command[5:]
+			print("Play ", songName)
+			videoId = self.__youtubePlayer.searchSong(songName)
+			if videoId:
+				self.__youtubePlayer.stop()
+
+			self.__youtubePlayer.add2Front(videoId)
+
+			return True
+
+		# Pause the music
+		if GoogleAssistant.PAUSE_REG.fullmatch(command):
+			print("Pause music detected")
+			
+			return True
+
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
+			print("Resume detected")
+
+			return True
+
+		# Add songs to queue
+		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
+			print("Add 2 Queue detected")
+			songName = command[4:-12]
+			print("Add ", songName)
+			videoId = self.__youtubePlayer.searchSong(songName)
+			self.__youtubePlayer.add2Queue(videoId)
+
+			return True
+
+		# Next song in the playlist
+		if GoogleAssistant.NEXT_SONG_RE.fullmatch(command):
+			print("Next song detected")
+			self.__youtubePlayer.next()
+			self.__youtubePlayer.pause()
+
+			return True
+
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
+			print("Resume detected")
+
+			return True
+
+		# Previous song in playlist
+		if GoogleAssistant.PREVIOUS_SONG_RE.fullmatch(command):
+			print("Previous song detected")
+			self.__youtubePlayer.previous()
+			self.__youtubePlayer.pause()
+
+			return True
+
+		# Clean playlist
+		if GoogleAssistant.CLEAR_QUEUE_RE.fullmatch(command):
+			print("Clear playlist detected")
+			self.__youtubePlayer.stop()
+			self.__youtubePlayer.cleanQueue()
 
 			return True
 
@@ -302,6 +373,50 @@ class GoogleAssistant:
 			return True
 
 		return False
+
+	"""
+	Determin whether the music player should resume playing right before
+	ending the assistant
+	@param command - The command user issued, used to determine whether 
+					 the music should resume right before the assistant ended
+	@param pausePreviously - Whether the music is paused before thst assistant
+							 started. True for music is paused before the assistant
+							 start, otherwise False
+	@return True when the music should resume right before the assistant ended,
+			otherwise False
+	"""
+	def __resumeMusicAfterAssist(self, command, pausePreviously):
+		print("Not finished implemented")
+
+		# Pause music when the user command to 
+		if GoogleAssistant.PAUSE_REG.fullmatch(command):
+			return False
+
+		# Stop music when user cleared the playlist
+		if GoogleAssistant.CLEAR_QUEUE_RE.fullmatch(command):
+			return False
+
+		# Play music if user command to
+		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
+			return True
+
+		# Play music if user add music to queue
+		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
+			return True
+
+		# Play music user want next song
+		if GoogleAssistant.NEXT_SONG_RE.fullmatch(command):
+			return True
+
+		# Play music if user want previous song
+		if GoogleAssistant.PREVIOUS_SONG_RE.fullmatch(command):
+			return True
+
+		if GoogleAssistant.RESUME_REG.fullmatch(command):
+			return True
+
+		# Otherwise depends of whether music is paused before starting the assisatnt
+		return not pausePreviously
 
 	"""
 	Yields: AssistRequest messages to send to the API.
