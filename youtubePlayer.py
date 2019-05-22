@@ -8,6 +8,11 @@ import vlc
 import googleapiclient.discovery
 
 """
+TODO:
+	* Can add to front
+"""
+
+"""
 This serves as the music player for the roomba
 """
 class YoutubePlayer:
@@ -80,6 +85,9 @@ class YoutubePlayer:
 			return None
 
 		return response['items'][0]['id']['videoId']
+
+	def add2Front(self):
+		print("Not implemented")
 
 	"""
 	Add one song to the queue of music to play
