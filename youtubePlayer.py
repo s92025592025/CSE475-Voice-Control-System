@@ -20,7 +20,7 @@ class YoutubePlayer:
 		self.__API_KEY = self.__getAPIKey(apiKeyFile)
 
 		# Setup pafy
-		pafy.set_api_key(self.__API_KEY)
+		#pafy.set_api_key(self.__API_KEY)
 
 		# Setup youtube api
 		self.__youtubeApi = self.__youtubeApiFactory(self.__API_KEY)
@@ -29,8 +29,10 @@ class YoutubePlayer:
 		self.__instance = vlc.Instance()
 		self.__musicPlayer = self.__instance.media_player_new()
 
-		# Setup music queue, the top of the queue is the music currently playing
+		# Setup music queue
 		self.__music2play = queue.Queue()
+
+		self.__nowPlaying = None
 
 	"""
 	Gets the api key from pointed location
@@ -89,6 +91,7 @@ class YoutubePlayer:
 		url = YoutubePlayer.BASE_URL + videoId
 		video = pafy.new(url)
 		bestAudio = video.getbestaudio()
+		print(bestAudio.url)
 
 		self.__music2play.put(self.__instance.media_new(bestAudio.url))
 
@@ -97,3 +100,22 @@ class YoutubePlayer:
 	"""
 	def songsInQueue(self):
 		return self.__music2play.qsize()
+
+	"""
+	Plays music in the queue
+	@return True when there is music to play and playing, otherwise False
+	"""
+	def play(self):
+		if not self.__nowPlaying:
+			if self.__music2play.empty():
+				return False
+			
+			self.__nowPlaying = self.__music2play.get()
+			self.__nowPlaying.get_mrl()
+
+		self.__musicPlayer.set_media(self.__nowPlaying)
+		self.__musicPlayer.play()
+
+		return True
+
+
