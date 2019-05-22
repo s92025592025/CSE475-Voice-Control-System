@@ -40,6 +40,7 @@ class GoogleAssistant:
 
 	# Custom command regexs
 	PLAY_MUSIC_REG = re.compile("play [a-z]", re.I)
+	PAUSE_REG = re.compile("pause", re.I)
 	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
 	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
@@ -167,6 +168,10 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
+		pausedBefore = True
+		if self.__youtubePlayer.isPlaying():
+			pausedBefore = False
+
 		self.__youtubePlayer.pause() # Stop music so Google Assistant can talk
 		self.__assistantAudioSetup()
 
@@ -227,6 +232,9 @@ class GoogleAssistant:
 		try:
 			self.conversationStream.close()
 			print("G Assistant closed conversation stream")
+
+			if self.__resumeMusicAfterAssist(userCommand, pausedBefore):
+				self.__youtubePlayer.play()
 		except Exception as e:
 			print("G Assistant can't close conversation stream", e)
 			sys.exit(-1)
@@ -279,8 +287,6 @@ class GoogleAssistant:
 	@return True if command is a custom command, otherwise False
 	"""
 	def __customCommands(self, command):
-		isCommand = False
-
 		# Play music
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
 			print("Play Music detected")
@@ -288,9 +294,13 @@ class GoogleAssistant:
 			print("Play ", songName)
 			videoId = self.__youtubePlayer.searchSong(songName)
 			self.__youtubePlayer.add2Front(videoId)
-			self.__youtubePlayer.stop()
-			self.__youtubePlayer.play()
 
+			return True
+
+		# Pause the music
+		if GoogleAssistant.PAUSE_REG.fullmatch(command):
+			print("Pause music detected")
+			
 			return True
 
 		# Switch mode
@@ -318,6 +328,31 @@ class GoogleAssistant:
 			return True
 
 		return False
+
+	"""
+	Determin whether the music player should resume playing right before
+	ending the assistant
+	@param command - The command user issued, used to determine whether 
+					 the music should resume right before the assistant ended
+	@param pausePreviously - Whether the music is paused before thst assistant
+							 started. True for music is paused before the assistant
+							 start, otherwise False
+	@return True when the music should resume right before the assistant ended,
+			otherwise False
+	"""
+	def __resumeMusicAfterAssist(self, command, pausePreviously):
+		print("Not finished implemented")
+
+		# Pause music when the user command to 
+		if GoogleAssistant.PAUSE_REG.fullmatch(command):
+			return False
+
+		# Play music if user command to
+		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
+			return True
+
+		# Otherwise depends of whether music is paused before starting the assisatnt
+		return not pausePreviously
 
 	"""
 	Yields: AssistRequest messages to send to the API.

@@ -161,3 +161,8 @@ class YoutubePlayer:
 	def stop(self):
 		self.__musicPlayer.stop()
 
+	"""
+	@return True if the music player is playing, otherwise False
+	"""
+	def isPlaying(self):
+		return self.__musicPlayer.is_playing()
