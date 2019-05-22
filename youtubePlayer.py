@@ -5,12 +5,15 @@ import io
 import pafy
 import queue
 
+import vlc
 import googleapiclient.discovery
 
 """
 This serves as the music player for the roomba
 """
 class YoutubePlayer:
+	BASE_URL = "https://www.youtube.com/watch?v="
+
 	def __init__(self):
 		# Getting our api key
 		apiKeyFile = click.get_app_dir("youtube-api-key") + "/key.json"
@@ -21,6 +24,10 @@ class YoutubePlayer:
 
 		# Setup youtube api
 		self.__youtubeApi = self.__youtubeApiFactory(self.__API_KEY)
+
+		# Setup vlc instance and player
+		self.__instance = vlc.Instance()
+		self.__musicPlayer = self.__instance.media_player_new()
 
 		# Setup music queue, the top of the queue is the music currently playing
 		self.__music2play = queue.Queue()
@@ -79,7 +86,11 @@ class YoutubePlayer:
 	@param videoId - The youtube videoId to play
 	"""
 	def add2Queue(self, videoId):
-		self.__music2play.put(videoId)
+		url = YoutubePlayer.BASE_URL + videoId
+		video = pafy.new(url)
+		bestAudio = video.getbestaudio()
+
+		self.__music2play.put(self.__instance.media_new(bestAudio.url))
 
 	"""
 	@returns The number of songs songs left in the queue
