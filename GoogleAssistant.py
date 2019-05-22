@@ -43,6 +43,7 @@ class GoogleAssistant:
 	ADD_2_QUEUE_RE = re.compile("put .* to playlist", re.I)
 	NEXT_SONG_RE = re.compile("next song", re.I)
 	PREVIOUS_SONG_RE = re.compile('previous song', re.I)
+	CLEAR_QUEUE_RE = re.compile('clear playlist', re.I)
 	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
 	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
@@ -344,6 +345,14 @@ class GoogleAssistant:
 
 			return True
 
+		# Clean playlist
+		if GoogleAssistant.CLEAR_QUEUE_RE.fullmatch(command):
+			print("Clear playlist detected")
+			self.__youtubePlayer.stop()
+			self.__youtubePlayer.cleanQueue()
+
+			return True
+
 		# Switch mode
 		if GoogleAssistant.SWITCH_MODE_REG.match(command):
 			print("Swithing mode")
@@ -386,6 +395,10 @@ class GoogleAssistant:
 
 		# Pause music when the user command to 
 		if GoogleAssistant.PAUSE_REG.fullmatch(command):
+			return False
+
+		# Stop music when user cleared the playlist
+		if GoogleAssistant.CLEAR_QUEUE_RE.fullmatch(command):
 			return False
 
 		# Play music if user command to
