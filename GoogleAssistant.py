@@ -25,9 +25,7 @@ except SystemError:
 
 """
 TODO:
-	* pause function
 	* add to queue command
-	* resume play in appropriate situations
 """
 
 """
