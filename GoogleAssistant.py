@@ -26,6 +26,8 @@ except SystemError:
 """
 TODO:
 	* add to queue command
+	* clear queue
+	* switch to next in queue
 """
 
 """
@@ -37,8 +39,9 @@ class GoogleAssistant:
 	DEFAULT_GRPC_DEADLINE = 60 * 3 + 5
 
 	# Custom command regexs
-	PLAY_MUSIC_REG = re.compile("play [a-z]", re.I)
+	PLAY_MUSIC_REG = re.compile("play .*", re.I)
 	PAUSE_REG = re.compile("pause", re.I)
+	ADD_2_QUEUE_RE = re.compile("put .* to playlist", re.I)
 	SWITCH_MODE_REG = re.compile("switch to (manual|autonomous) mode", re.I)
 	THANOS_SNAP_REG = re.compile("thanos snap", re.I)
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
@@ -301,6 +304,15 @@ class GoogleAssistant:
 			
 			return True
 
+		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
+			print("Add 2 Queue detected")
+			songName = command[4:-12]
+			print("Add ", songName)
+			videoId = self.__youtubePlayer.searchSong(songName)
+			self.__youtubePlayer.add2Queue(videoId)
+
+			return True
+
 		# Switch mode
 		if GoogleAssistant.SWITCH_MODE_REG.match(command):
 			print("Swithing mode")
@@ -347,6 +359,10 @@ class GoogleAssistant:
 
 		# Play music if user command to
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
+			return True
+
+		# Play music if user add music to queue
+		if GoogleAssistant.ADD_2_QUEUE_RE.match(command):
 			return True
 
 		# Otherwise depends of whether music is paused before starting the assisatnt
