@@ -160,12 +160,13 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
-		self.__youtubePlayer.pause()
+		self.__youtubePlayer.pause() # Stop music so Google Assistant can talk
 		self.__assistantAudioSetup()
 
 		runningActions = []
 		ongoingConversation = True
 		isCustomCommand = False
+		userCommand = ""
 
 		while ongoingConversation:
 			self.conversationStream.start_recording()
@@ -175,17 +176,23 @@ class GoogleAssistant:
 												  GoogleAssistant.DEFAULT_GRPC_DEADLINE):
 				ongoingConversation = self.__responseAction(response, ongoingConversation)
 
-				# If we got the transcript of the user speech
-				if response.speech_results:
-					result = "".join(t.transcript for t in response.speech_results)
-					print("Speech result: ", result)
+				# If the user utterance has endded
+				if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
+					print("End of Utterance")
+					print("User said: ", userCommand)
+					self.conversationStream.stop_recording()
+					print("G Assistant Stop recording")
 
-					isCustomCommand = self.__customCommands(result)
+					isCustomCommand = self.__customCommands(userCommand)
 					if isCustomCommand:
 						self.conversationStream.stop_recording()
 						self.conversationStream.stop_playback()
 						# Is custom command, break out the loop
 						break
+
+				# If we got the transcript of the user speech
+				if response.speech_results:
+					userCommand = "".join(t.transcript for t in response.speech_results)
 
 				if response.device_action.device_request_json:
 					#print("Responed device action")
@@ -227,13 +234,6 @@ class GoogleAssistant:
 			 True if further conversation is needed, False otherwise
 	"""
 	def __responseAction(self, response, furtherConversation):
-
-		# If the user utterance has endded
-		if response.event_type == embedded_assistant_pb2.AssistResponse.END_OF_UTTERANCE:
-			print("End of Utterance")
-			self.conversationStream.stop_recording()
-			print("G Assistant Stop recording")
-
 		# If there is audio to output to the user
 		if len(response.audio_out.audio_data) > 0:
 			# If the device is not playing audio output
