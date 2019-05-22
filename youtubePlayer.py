@@ -94,6 +94,7 @@ class YoutubePlayer:
 
 		# If the first result is a playlist, get the first song of the playlist
 		if response['items'][0]['id']['kind'] == "youtube#playlist":
+			"""
 			# Get the first video in the playlist
 			playListId = response['items'][0]['id']['playlistId']
 			request = self.__youtubeApi.playlistItems().list(
@@ -108,9 +109,51 @@ class YoutubePlayer:
 				return None
 
 			return response['items'][0]['snippet']['resourceId']['videoId']
+			"""
+			return self.__extractVideoIdFromPlayList(response)
+
+		# If the first result is a channel
+		if response['items'][0]['id']['kind'] == "youtube#channel":
+			channelId = response['items'][0]['id']['channelId']
+			request = self.__youtubeApi.search().list(
+					part="snippet",
+					channelId=channelId,
+					maxResults=1,
+					order="date"
+			)
+
+			response = request.execute()
+
+			if response['pageInfo']['totalResults'] <= 0:
+				return None
+
+			if response['items'][0]['id']['kind'] == "youtube#playlist":
+				return self.__extractVideoIdFromPlayList(response)
+
+			return response['items'][0]['snippet']['resourceId']['videoId']
 
 		# If the first result is a video get the video id
 		return response['items'][0]['id']['videoId']
+
+	"""
+	@param response - The search response contains playlist
+	@return The first videoId in the playlist
+	"""
+	def __extractVideoIdFromPlayList(self, response):
+		# Get the first video in the playlist
+		playListId = response['items'][0]['id']['playlistId']
+		request = self.__youtubeApi.playlistItems().list(
+			part="snippet",
+			maxResults=1,
+			playlistId=playListId
+		)
+
+		response = request.execute()
+
+		if response['pageInfo']['totalResults'] <= 0:
+			return None
+
+		return response['items'][0]['snippet']['resourceId']['videoId']
 
 	"""
 	Add one song to the front of the queue to play
