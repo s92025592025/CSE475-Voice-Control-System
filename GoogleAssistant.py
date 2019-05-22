@@ -11,6 +11,7 @@ import google.auth.transport.grpc
 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
+from youtubePlayer import YoutubePlayer
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -46,6 +47,8 @@ class GoogleAssistant:
 		self.__audioSetup()
 		self.deviceHandler = self.__deviceHandlerSetup()
 		self.__create_assistant()
+
+		self.__youtubePlayer = YoutubePlayer()
 
 	"""
 	Grabs the device information for this assistant session
@@ -157,6 +160,7 @@ class GoogleAssistant:
 	Start a Assistant request
 	"""
 	def startAssist(self):
+		self.__youtubePlayer.pause()
 		self.__assistantAudioSetup()
 
 		runningActions = []
@@ -274,6 +278,9 @@ class GoogleAssistant:
 		# Play music
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
 			print("Play Music detected")
+			videoId = self.__youtubePlayer.searchSong("The shape of you")
+			self.__youtubePlayer.add2Queue(videoId)
+			self.__youtubePlayer.play()
 
 			return True
 
