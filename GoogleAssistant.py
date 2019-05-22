@@ -195,7 +195,6 @@ class GoogleAssistant:
 					userCommand = "".join(t.transcript for t in response.speech_results)
 
 				if response.device_action.device_request_json:
-					#print("Responed device action")
 					actionRequest = json.loads(response.device_action.device_request_json)
 
 					# Received a handler to run
@@ -278,7 +277,9 @@ class GoogleAssistant:
 		# Play music
 		if GoogleAssistant.PLAY_MUSIC_REG.match(command):
 			print("Play Music detected")
-			videoId = self.__youtubePlayer.searchSong("The shape of you")
+			songName = command[5:]
+			print("Play ", songName)
+			videoId = self.__youtubePlayer.searchSong(songName)
 			self.__youtubePlayer.add2Queue(videoId)
 			self.__youtubePlayer.play()
 
