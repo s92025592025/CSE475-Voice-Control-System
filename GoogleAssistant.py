@@ -294,6 +294,9 @@ class GoogleAssistant:
 			songName = command[5:]
 			print("Play ", songName)
 			videoId = self.__youtubePlayer.searchSong(songName)
+			if videoId:
+				self.__youtubePlayer.stop()
+
 			self.__youtubePlayer.add2Front(videoId)
 
 			return True
