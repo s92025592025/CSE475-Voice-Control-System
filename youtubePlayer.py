@@ -3,6 +3,7 @@ import click
 import json
 import io
 import pafy
+import queue
 
 import googleapiclient.discovery
 
@@ -20,6 +21,9 @@ class YoutubePlayer:
 
 		# Setup youtube api
 		self.__youtubeApi = self.__youtubeApiFactory(self.__API_KEY)
+
+		# Setup music queue, the top of the queue is the music currently playing
+		self.__music2play = queue.Queue()
 
 	"""
 	Gets the api key from pointed location
@@ -57,7 +61,6 @@ class YoutubePlayer:
 	@return a video id for the first search result, return None when on result us returned
 	"""
 	def searchSong(self, musicName):
-		print("Not implemented")
 		request = self.__youtubeApi.search().list(
 				part="snippet",
 				maxResults=1,
@@ -70,3 +73,16 @@ class YoutubePlayer:
 			return None
 
 		return response['items'][0]['id']['videoId']
+
+	"""
+	Add one song to the queue of music to play
+	@param videoId - The youtube videoId to play
+	"""
+	def add2Queue(self, videoId):
+		self.__music2play.put(videoId)
+
+	"""
+	@returns The number of songs songs left in the queue
+	"""
+	def songsInQueue(self):
+		return self.__music2play.qsize()
