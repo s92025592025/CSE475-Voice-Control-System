@@ -9,7 +9,6 @@ import googleapiclient.discovery
 
 """
 TODO:
-	* Can add to front
 	* Seach for fisrt vid rather than others in search
 """
 
@@ -37,6 +36,11 @@ class YoutubePlayer:
 		# Setup music queue
 		self.__music2play = self.__instance.media_list_new()
 		self.__musicPlayer.set_media_list(self.__music2play)
+
+		# Setup callback events
+		self.__musicPlayerEvents = self.__musicPlayer.event_manager()
+		self.__musicPlayerEvents.event_attach(vlc.EventType.MediaListPlayerPlayed,
+											  self.showCurrentPlaying)
 
 	"""
 	Gets the api key from pointed location
@@ -69,6 +73,13 @@ class YoutubePlayer:
 		return output
 
 	"""
+	Callback trigger after a song is played. Removed the last played song
+	"""
+	@vlc.callbackmethod
+	def showCurrentPlaying(self, data):
+		self.__music2play.remove_index(0)
+
+	"""
 	Search for the music on youtube with the provided music name
 	@param musicName - The music name given by the user
 	@return a video id for the first search result, return None when on result us returned
@@ -81,7 +92,7 @@ class YoutubePlayer:
 		)
 
 		response = request.execute() # response is already a json object
-		print(response)
+		#print(response)
 
 		if response['pageInfo']['totalResults'] <= 0:
 			return None
@@ -121,6 +132,13 @@ class YoutubePlayer:
 	"""
 	def songsInQueue(self):
 		return self.__music2play.count()
+
+	"""
+	Clears out the entire medialist
+	"""
+	def cleanQueue(self):
+		while self.songsInQueue() > 0:
+			self.__music2play.remove_index(0)
 
 	"""
 	Plays music in the queue
