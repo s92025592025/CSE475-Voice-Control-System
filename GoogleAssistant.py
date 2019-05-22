@@ -287,7 +287,8 @@ class GoogleAssistant:
 			songName = command[5:]
 			print("Play ", songName)
 			videoId = self.__youtubePlayer.searchSong(songName)
-			self.__youtubePlayer.add2Queue(videoId)
+			self.__youtubePlayer.add2Front(videoId)
+			self.__youtubePlayer.stop()
 			self.__youtubePlayer.play()
 
 			return True

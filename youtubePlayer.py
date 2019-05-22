@@ -10,6 +10,7 @@ import googleapiclient.discovery
 """
 TODO:
 	* Can add to front
+	* Seach for fisrt vid rather than others in search
 """
 
 """
@@ -80,26 +81,40 @@ class YoutubePlayer:
 		)
 
 		response = request.execute() # response is already a json object
+		print(response)
 
 		if response['pageInfo']['totalResults'] <= 0:
 			return None
 
 		return response['items'][0]['id']['videoId']
 
-	def add2Front(self):
-		print("Not implemented")
+	"""
+	Add one song to the front of the queue to play
+	@param videoId - The youtube videoId to play
+	"""
+	def add2Front(self, videoId):
+		media = self.__getBestAudioMedia(videoId)
+		self.__music2play.insert_media(media, 0)
 
 	"""
 	Add one song to the queue of music to play
 	@param videoId - The youtube videoId to play
 	"""
 	def add2Queue(self, videoId):
+		media = self.__getBestAudioMedia(videoId)
+		self.__music2play.add_media(media)
+
+	"""
+	@param videoId - The youtube videoId to play
+	@return A Media object that contains the audio of the videoId
+	"""
+	def __getBestAudioMedia(self, videoId):
 		url = YoutubePlayer.BASE_URL + videoId
 		video = pafy.new(url)
 		bestAudio = video.getbestaudio()
 
-		media = self.__instance.media_new(bestAudio.url)
-		self.__music2play.add_media(media)
+		return self.__instance.media_new(bestAudio.url)
+
 
 	"""
 	@returns The number of songs songs left in the queue
@@ -121,4 +136,10 @@ class YoutubePlayer:
 	"""
 	def pause(self):
 		self.__musicPlayer.pause()
+
+	"""
+	Stop the music player
+	"""
+	def stop(self):
+		self.__musicPlayer.stop()
 
