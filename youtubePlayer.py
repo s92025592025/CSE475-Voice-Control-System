@@ -112,10 +112,25 @@ class YoutubePlayer:
 			
 			self.__nowPlaying = self.__music2play.get()
 			self.__nowPlaying.get_mrl()
-
-		self.__musicPlayer.set_media(self.__nowPlaying)
-		self.__musicPlayer.play()
+			self.__musicPlayer.set_media(self.__nowPlaying)
+			self.__musicPlayer.play()
+		else:
+			self.__musicPlayer.resume()
 
 		return True
 
+	"""
+	Pause currently playing music
+	"""
+	def pause(self):
+		self.__musicPlayer.pause()
 
+	"""
+	Returns whether the currently playing song is finished
+	@return True when the song is finished, otherwise is False
+	"""
+	def nowPlayingDone(self):
+		if not self.__nowPlaying:
+			return False
+
+		return self.__nowPlaying.get_state() == vlc.State.Ended
