@@ -3,7 +3,6 @@ import click
 import json
 import io
 import pafy
-import queue
 
 import vlc
 import googleapiclient.discovery
@@ -27,12 +26,11 @@ class YoutubePlayer:
 
 		# Setup vlc instance and player
 		self.__instance = vlc.Instance()
-		self.__musicPlayer = self.__instance.media_player_new()
+		self.__musicPlayer = self.__instance.media_list_player_new()
 
 		# Setup music queue
-		self.__music2play = queue.Queue()
-
-		self.__nowPlaying = None
+		self.__music2play = self.__instance.media_list_new()
+		self.__musicPlayer.set_media_list(self.__music2play)
 
 	"""
 	Gets the api key from pointed location
@@ -91,31 +89,22 @@ class YoutubePlayer:
 		url = YoutubePlayer.BASE_URL + videoId
 		video = pafy.new(url)
 		bestAudio = video.getbestaudio()
-		print(bestAudio.url)
 
-		self.__music2play.put(self.__instance.media_new(bestAudio.url))
+		media = self.__instance.media_new(bestAudio.url)
+		self.__music2play.add_media(media)
 
 	"""
 	@returns The number of songs songs left in the queue
 	"""
 	def songsInQueue(self):
-		return self.__music2play.qsize()
+		return self.__music2play.count()
 
 	"""
 	Plays music in the queue
 	@return True when there is music to play and playing, otherwise False
 	"""
 	def play(self):
-		if not self.__nowPlaying:
-			if self.__music2play.empty():
-				return False
-			
-			self.__nowPlaying = self.__music2play.get()
-			self.__nowPlaying.get_mrl()
-			self.__musicPlayer.set_media(self.__nowPlaying)
-			self.__musicPlayer.play()
-		else:
-			self.__musicPlayer.resume()
+		self.__musicPlayer.play()
 
 		return True
 
@@ -125,12 +114,3 @@ class YoutubePlayer:
 	def pause(self):
 		self.__musicPlayer.pause()
 
-	"""
-	Returns whether the currently playing song is finished
-	@return True when the song is finished, otherwise is False
-	"""
-	def nowPlayingDone(self):
-		if not self.__nowPlaying:
-			return False
-
-		return self.__nowPlaying.get_state() == vlc.State.Ended
