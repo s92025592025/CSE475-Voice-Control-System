@@ -46,6 +46,9 @@ class GoogleAssistant:
 	SELF_DESTRUCT_REG = re.compile("initiate self destruct sequence", re.I)
 	READ_TWEET_REG = re.compile("read your tweet", re.I)
 
+	# Preset responds
+	THANOS_SNAP_RESPONSE = "vJqA2fyMJQY"
+
 
 	"""
 	@param i2c - The i2c communication needed to control the arduino
@@ -370,6 +373,14 @@ class GoogleAssistant:
 		# Thanos snap
 		if GoogleAssistant.THANOS_SNAP_REG.match(command):
 			print("You should have gone for the head")
+			self.__youtubePlayer.stop()
+			self.__youtubePlayer.add2Front("vJqA2fyMJQY")
+			self.__youtubePlayer.play()
+
+			while self.__youtubePlayer.isPlaying():
+				pass
+
+			sys.exit(0)
 
 			return True
 

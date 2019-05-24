@@ -94,22 +94,7 @@ class YoutubePlayer:
 
 		# If the first result is a playlist, get the first song of the playlist
 		if response['items'][0]['id']['kind'] == "youtube#playlist":
-			"""
-			# Get the first video in the playlist
-			playListId = response['items'][0]['id']['playlistId']
-			request = self.__youtubeApi.playlistItems().list(
-				part="snippet",
-				maxResults=1,
-				playlistId=playListId
-			)
 
-			response = request.execute()
-
-			if response['pageInfo']['totalResults'] <= 0:
-				return None
-
-			return response['items'][0]['snippet']['resourceId']['videoId']
-			"""
 			return self.__extractVideoIdFromPlayList(response)
 
 		# If the first result is a channel
