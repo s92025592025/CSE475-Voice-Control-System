@@ -12,6 +12,8 @@ import google.auth.transport.grpc
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2_grpc 
 from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2 
 from youtubePlayer import YoutubePlayer
+from i2c import I2C
+from i2c import Registers
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -45,7 +47,11 @@ class GoogleAssistant:
 	READ_TWEET_REG = re.compile("read your tweet", re.I)
 
 
-	def __init__(self):
+	"""
+	@param i2c - The i2c communication needed to control the arduino
+	"""
+	def __init__(self, i2c):
+		self.__i2c = i2c
 		self.__CREDENTIAL_FILE = click.get_app_dir('google-oauthlib-tool') + "/credentials.json"
 		deviceConfigFile = click.get_app_dir('googlesamples-assistant') + "/device_config.json"
 		self.__deviceInformation(deviceConfigFile)
@@ -351,6 +357,13 @@ class GoogleAssistant:
 		# Switch mode
 		if GoogleAssistant.SWITCH_MODE_REG.match(command):
 			print("Swithing mode")
+			modeString = command[10:-5]
+			print(modeString)
+
+			if modeString == "manual":
+				self.__i2c.changeDriveMode(Registers.MODE_MANUAL)
+			elif modeString == "autonomous":
+				self.__i2c.changeDriveMode(Registers.MODE_AUTO)
 
 			return True
 
