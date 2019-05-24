@@ -23,7 +23,11 @@ class I2C:
 	"""
 	def write2Slave(self, reg, data):
 		time.sleep(self.__COMMUNICATE_INTERVAL)
-		self.__bus.write_byte_data(self.SLAVE_ADDR, reg, data)
+		try:
+			self.__bus.write_byte_data(self.SLAVE_ADDR, reg, data)
+		except Exception as e:
+			print("i2c write exception ", e)
+			self.write2Slave(reg, data)
 
 	"""
 	Read data from slave. Slave address defined in SLAVE_ADDR. User is responsible
@@ -33,25 +37,28 @@ class I2C:
 	"""
 	def readFromSlave(self, reg):
 		time.sleep(self.__COMMUNICATE_INTERVAL)
-		return self.__bus.read_byte_data(self.SLAVE_ADDR, reg)
+
+		output = ""
+
+		try:
+			output = self.__bus.read_byte_data(self.SLAVE_ADDR, reg)
+		except Exception as e:
+			print("i2c read exception", e)
+			output = self.readFromSlave(reg)
+
+		return output
 
 	"""
 	Sets the drive mode to MODE_AUTO or MODE_MANUAL
 	@param mode - The mode to set to. Can only be Registers.MODE_AUTO
 				  or Registers.MODE_MANUAL
-	@return True when the mode is is successfully set, otherwise False
 	"""
 	def changeDriveMode(self, mode):
 		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
 			self.write2Slave(Registers.INDEX_MODE, mode)
-			result = self.readFromSlave(Registers.INDEX_SET_MODE)
-
-			return result == mode
-
-		return False
 
 
-class Registers(Enum):
+class Registers:
 	# MODE TYPE
 	MODE_AUTO = 0x1
 	MODE_MANUAL = 0x0
@@ -66,7 +73,7 @@ class Registers(Enum):
 	INDEX_Y_HH = 0x4
 	INDEX_Y_HL = 0x5
 	INDEX_Y_LH = 0x6
-	INDEX_Y_LH = 0x7
+	INDEX_Y_LL = 0x7
 
 	# MODES
 	INDEX_SET_MODE = 0x8
