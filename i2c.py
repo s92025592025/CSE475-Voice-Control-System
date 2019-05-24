@@ -6,10 +6,29 @@ The class serves as the communication between the arduino with i2c,
 which the pi is the master
 """
 class I2C:
-	def __init__():
+	def __init__(self, slaveAddr):
 		self.__I2C_CHANNEL = 1
 		self.__bus = smbus.SMBus(1)
 		self.__REG = bytearray(34)
+		self.SLAVE_ADDR = slaveAddr
+
+	"""
+	Writes data to the slave. Slave address defined in SLAVE_ADDR. User
+	is responsible for only write to the register that is meant to do so
+	@param reg - The register index to write to. Index defined in Registers class
+	@param data - The data to send send
+	// TO-DO: ERROR CONTROL?
+	"""
+	def write2Slave(self, reg, data):
+		print("Not implemented")
+
+	"""
+	Sets the drive mode to MODE_AUTO or MODE_MANUAL
+	@param mode - The mode to set to. Can only be Registers.MODE_AUTO
+				  or Registers.MODE_MANUAL
+	"""
+	def changeDriveMode(self, mode):
+		print("Not implemented")
 
 
 class Registers(Enum):
