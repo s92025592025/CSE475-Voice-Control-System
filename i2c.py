@@ -1,4 +1,5 @@
 import smbus
+import time
 from enum import Enum
 
 """
@@ -8,6 +9,7 @@ which the pi is the master
 class I2C:
 	def __init__(self, slaveAddr):
 		self.__I2C_CHANNEL = 1
+		self.__COMMUNICATE_INTERVAL = 0.010
 		self.__bus = smbus.SMBus(1)
 		self.__REG = bytearray(34)
 		self.SLAVE_ADDR = slaveAddr
@@ -16,19 +18,37 @@ class I2C:
 	Writes data to the slave. Slave address defined in SLAVE_ADDR. User
 	is responsible for only write to the register that is meant to do so
 	@param reg - The register index to write to. Index defined in Registers class
-	@param data - The data to send send
+	@param data - The data to send, the data should only be one byte
 	// TO-DO: ERROR CONTROL?
 	"""
 	def write2Slave(self, reg, data):
-		print("Not implemented")
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		self.__bus.write_byte_data(self.SLAVE_ADDR, reg, data)
+
+	"""
+	Read data from slave. Slave address defined in SLAVE_ADDR. User is responsible
+	for only read the register meant to be read.
+	@param reg - The register to read data from
+	@return A byte size data read from reg
+	"""
+	def readFromSlave(self, reg):
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		return self.__bus.read_byte_data(self.SLAVE_ADDR, reg)
 
 	"""
 	Sets the drive mode to MODE_AUTO or MODE_MANUAL
 	@param mode - The mode to set to. Can only be Registers.MODE_AUTO
 				  or Registers.MODE_MANUAL
+	@return True when the mode is is successfully set, otherwise False
 	"""
 	def changeDriveMode(self, mode):
-		print("Not implemented")
+		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
+			self.write2Slave(Registers.INDEX_MODE, mode)
+			result = self.readFromSlave(Registers.INDEX_SET_MODE)
+
+			return result == mode
+
+		return False
 
 
 class Registers(Enum):
