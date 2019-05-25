@@ -3,8 +3,9 @@ import sys
 import signal
 
 from GoogleAssistant import GoogleAssistant
+from i2c import I2C
 
-
+SLAVE_ADDR = 0x62
 interrupted = False
 
 def signal_handler(signal, frame):
@@ -32,8 +33,8 @@ if len(sys.argv) == 1:
 
 model = sys.argv[1]
 
-#assistantChannel = gAssisantAuth()
-assistant = GoogleAssistant()
+i2c = I2C(SLAVE_ADDR)
+assistant = GoogleAssistant(i2c)
 
 # capture SIGINT signal, e.g., Ctrl+C
 signal.signal(signal.SIGINT, signal_handler)
