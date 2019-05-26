@@ -5,7 +5,10 @@ cffi==1.12.3
 chardet==3.0.4
 click==6.7
 cryptography==2.6.1
+dbus-python==1.2.8
+decorator==4.4.0
 enum34==1.1.6
+evento==1.0.1
 futures==3.1.1
 google-api-core==1.11.0
 google-api-python-client==1.7.8
@@ -20,6 +23,7 @@ grpcio==1.20.1
 httplib2==0.12.3
 idna==2.8
 oauthlib==3.0.1
+omxplayer-wrapper==0.3.2
 pafy==0.5.4
 pathlib2==2.3.3
 protobuf==3.7.1
