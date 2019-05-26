@@ -14,6 +14,7 @@ from google.assistant.embedded.v1alpha2 import embedded_assistant_pb2
 from youtubePlayer import YoutubePlayer
 from i2c import I2C
 from i2c import Registers
+from GoogleTTS import GoogleTTS
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -61,6 +62,7 @@ class GoogleAssistant:
 		self.__create_assistant()
 
 		self.__youtubePlayer = YoutubePlayer()
+		self.__tts = GoogleTTS()
 
 	"""
 	Grabs the device information for this assistant session
@@ -370,6 +372,8 @@ class GoogleAssistant:
 		# Thanos snap
 		if GoogleAssistant.THANOS_SNAP_REG.match(command):
 			print("You should have gone for the head")
+			self.__tts.text2Speech("You should have gone for the head")
+			sys.exit(0)
 
 			return True
 
