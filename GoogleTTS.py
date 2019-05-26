@@ -32,12 +32,10 @@ class GoogleTTS:
 													   self.__VOICE, 
 													   self.__AUDIO_CONFIG)
 			
-			with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
-				f.write(response.audio_content)
-				self.__TTSCache[text] = f.name
-				print("Temp location: ", self.__TTSCache[text])
-				f.flush()
-				f.close()
+			f = tempfile.NamedTemporaryFile(suffix=".mp3")
+			f.write(response.audio_content)
+			self.__TTSCache[text] = f.name
+			print("Temp location: ", self.__TTSCache[text])
 
 		try:
 			player = OMXPlayer(self.__TTSCache[text])
