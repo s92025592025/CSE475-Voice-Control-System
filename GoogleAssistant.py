@@ -15,6 +15,7 @@ from youtubePlayer import YoutubePlayer
 from i2c import I2C
 from i2c import Registers
 from GoogleTTS import GoogleTTS
+from TwitterAPI import TwitterAPI
 
 try:
 	from googlesamples.assistant.grpc import (
@@ -63,6 +64,7 @@ class GoogleAssistant:
 
 		self.__youtubePlayer = YoutubePlayer()
 		self.__tts = GoogleTTS()
+		self.__twitterApi = TwitterAPI()
 
 	"""
 	Grabs the device information for this assistant session
@@ -386,6 +388,7 @@ class GoogleAssistant:
 		# Read Elon Musk tweet
 		if GoogleAssistant.READ_TWEET_REG.match(command):
 			print("Read tweet")
+			self.__tts.text2Speech(self.__twitterApi.getElonLatestTweet())
 
 			return True
 
