@@ -178,9 +178,9 @@ class GoogleAssistant:
 	def startAssist(self):
 		pausedBefore = True
 		if self.__youtubePlayer.isPlaying():
+			self.__youtubePlayer.pause() # Stop music so Google Assistant can talk
 			pausedBefore = False
 
-		self.__youtubePlayer.pause() # Stop music so Google Assistant can talk
 		self.__assistantAudioSetup()
 
 		runningActions = []
