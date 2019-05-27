@@ -406,8 +406,6 @@ class GoogleAssistant:
 			otherwise False
 	"""
 	def __resumeMusicAfterAssist(self, command, pausePreviously):
-		print("Not finished implemented")
-
 		# Pause music when the user command to 
 		if GoogleAssistant.PAUSE_REG.fullmatch(command):
 			return False
