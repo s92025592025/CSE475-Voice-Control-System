@@ -55,7 +55,7 @@ class I2C:
 	"""
 	def changeDriveMode(self, mode):
 		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
-			self.write2Slave(Registers.INDEX_MODE, mode)
+			self.write2Slave(Registers.INDEX_SET_MODE, mode)
 
 
 class Registers:
