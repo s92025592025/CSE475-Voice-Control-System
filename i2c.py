@@ -19,7 +19,6 @@ class I2C:
 	is responsible for only write to the register that is meant to do so
 	@param reg - The register index to write to. Index defined in Registers class
 	@param data - The data to send, the data should only be one byte
-	// TO-DO: ERROR CONTROL?
 	"""
 	def write2Slave(self, reg, data):
 		time.sleep(self.__COMMUNICATE_INTERVAL)
@@ -28,6 +27,20 @@ class I2C:
 		except Exception as e:
 			print("i2c write exception ", e)
 			self.write2Slave(reg, data)
+
+	"""
+	Write several bytes to target
+	@param reg - The target register to write to
+	@param data - The data array containing the data sending to reg
+	"""
+	def writeBytes2Slave(self, reg, data):
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+
+		try:
+			self.__bus.write_i2c_block_data(self.SLAVE_ADDR, reg, data)
+		except Exception as e:
+			print("i2c write bytes exception", e)
+			self.writeBytes2Slave(reg, data)
 
 	"""
 	Read data from slave. Slave address defined in SLAVE_ADDR. User is responsible
@@ -46,6 +59,35 @@ class I2C:
 			print("i2c read exception", e)
 			output = self.readFromSlave(reg)
 
+		return output
+
+	def read2BytesFromSlave(self, reg):
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		output = ""
+
+		try:
+			output = self.__bus.read_word_data(self.SLAVE_ADDR, reg)
+		except Exception as e:
+			print("i2s read 2 bytes exception", e)
+			output = self.read4BytesFromSlave(reg)
+	
+		return output
+
+	"""
+	Reads specified number bytes starting from reg. Can't read more than 32 bytes
+	@param reg - The register to read from
+	@param val - The mount of bytes to read from, shouldn't be more than 32
+	"""
+	def readBytesFromSlave(self, reg, val):
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		output = 0 
+		
+		try:
+			output = self.__bus.read_i2c_block_data(self.SLAVE_ADDR, reg, val)
+		except Exception as e:
+			print("i2s read 8 bytes exception", e)
+			output = self.readBytesFromSlave(reg, val)
+	
 		return output
 
 	"""
