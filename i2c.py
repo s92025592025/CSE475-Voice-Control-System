@@ -99,6 +99,59 @@ class I2C:
 		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
 			self.write2Slave(Registers.INDEX_SET_MODE, mode)
 
+	"""
+	Sends the data for Joysitck X.
+	@param data - The array of data send to the arduino, the size of the data
+				  should be 4
+	"""
+	def setJoyStickX(self, data):
+		if len(data) == 4:
+			self.writeBytes2Slave(Registers.INDEX_X_HH, data)
+
+	"""
+	Sends the data for Joysitck X.
+	@param data - The array of data send to the arduino, the size of the data
+				  should be 4
+	"""
+	def setJoyStickY(self, data):
+		if len(data) == 4:
+			self.writeBytes2Slave(Registers.INDEX_Y_HH, data)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor1Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR1_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor2Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR2_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor3Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR3_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor4Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR4_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readWheel1Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_WHEEL1_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readWheel2Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_WHEEL2_HH, 4)
 
 class Registers:
 	# MODE TYPE
