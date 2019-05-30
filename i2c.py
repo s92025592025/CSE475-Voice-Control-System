@@ -1,6 +1,6 @@
 import smbus
 import time
-from enum import Enum
+import threading
 
 """
 The class serves as the communication between the arduino with i2c,
@@ -8,6 +8,7 @@ which the pi is the master
 """
 class I2C:
 	def __init__(self, slaveAddr):
+		self.__RLOCK = threading.RLock()
 		self.__I2C_CHANNEL = 1
 		self.__COMMUNICATE_INTERVAL = 0.010
 		self.__bus = smbus.SMBus(1)
@@ -19,15 +20,33 @@ class I2C:
 	is responsible for only write to the register that is meant to do so
 	@param reg - The register index to write to. Index defined in Registers class
 	@param data - The data to send, the data should only be one byte
-	// TO-DO: ERROR CONTROL?
 	"""
 	def write2Slave(self, reg, data):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 		try:
 			self.__bus.write_byte_data(self.SLAVE_ADDR, reg, data)
 		except Exception as e:
 			print("i2c write exception ", e)
 			self.write2Slave(reg, data)
+
+		self.__RLOCK.release()
+
+	"""
+	Write several bytes to target
+	@param reg - The target register to write to
+	@param data - The data array containing the data sending to reg
+	"""
+	def writeBytes2Slave(self, reg, data):
+		self.__RLOCK.acquire()
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+
+		try:
+			self.__bus.write_i2c_block_data(self.SLAVE_ADDR, reg, data)
+		except Exception as e:
+			print("i2c write bytes exception", e)
+			self.writeBytes2Slave(reg, data)
+		self.__RLOCK.release()
 
 	"""
 	Read data from slave. Slave address defined in SLAVE_ADDR. User is responsible
@@ -36,6 +55,7 @@ class I2C:
 	@return A byte size data read from reg
 	"""
 	def readFromSlave(self, reg):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 
 		output = ""
@@ -45,7 +65,41 @@ class I2C:
 		except Exception as e:
 			print("i2c read exception", e)
 			output = self.readFromSlave(reg)
+		self.__RLOCK.release()
 
+		return output
+
+	def read2BytesFromSlave(self, reg):
+		self.__RLOCK.acquire()
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		output = ""
+
+		try:
+			output = self.__bus.read_word_data(self.SLAVE_ADDR, reg)
+		except Exception as e:
+			print("i2s read 2 bytes exception", e)
+			output = self.read4BytesFromSlave(reg)
+		self.__RLOCK.release()
+	
+		return output
+
+	"""
+	Reads specified number bytes starting from reg. Can't read more than 32 bytes
+	@param reg - The register to read from
+	@param val - The mount of bytes to read from, shouldn't be more than 32
+	"""
+	def readBytesFromSlave(self, reg, val):
+		self.__RLOCK.acquire()
+		time.sleep(self.__COMMUNICATE_INTERVAL)
+		output = 0 
+		
+		try:
+			output = self.__bus.read_i2c_block_data(self.SLAVE_ADDR, reg, val)
+		except Exception as e:
+			print("i2s read 8 bytes exception", e)
+			output = self.readBytesFromSlave(reg, val)
+		self.__RLOCK.release()
+	
 		return output
 
 	"""
@@ -55,8 +109,61 @@ class I2C:
 	"""
 	def changeDriveMode(self, mode):
 		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
-			self.write2Slave(Registers.INDEX_MODE, mode)
+			self.write2Slave(Registers.INDEX_SET_MODE, mode)
 
+	"""
+	Sends the data for Joysitck X.
+	@param data - The array of data send to the arduino, the size of the data
+				  should be 4
+	"""
+	def setJoyStickX(self, data):
+		if len(data) == 4:
+			self.writeBytes2Slave(Registers.INDEX_X_HH, data)
+
+	"""
+	Sends the data for Joysitck X.
+	@param data - The array of data send to the arduino, the size of the data
+				  should be 4
+	"""
+	def setJoyStickY(self, data):
+		if len(data) == 4:
+			self.writeBytes2Slave(Registers.INDEX_Y_HH, data)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor1Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR1_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor2Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR2_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor3Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR3_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readSensor4Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_SENSOR4_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readWheel1Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_WHEEL1_HH, 4)
+
+	"""
+	@return A array of 4 longs. Each represents the data of the sensor
+	"""
+	def readWheel2Data(self):
+		return self.readBytesFromSlave(Registers.INDEX_WHEEL2_HH, 4)
 
 class Registers:
 	# MODE TYPE
