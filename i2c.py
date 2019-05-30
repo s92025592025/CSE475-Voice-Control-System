@@ -1,6 +1,6 @@
 import smbus
 import time
-from enum import Enum
+import threading
 
 """
 The class serves as the communication between the arduino with i2c,
@@ -8,6 +8,7 @@ which the pi is the master
 """
 class I2C:
 	def __init__(self, slaveAddr):
+		self.__RLOCK = threading.RLock()
 		self.__I2C_CHANNEL = 1
 		self.__COMMUNICATE_INTERVAL = 0.010
 		self.__bus = smbus.SMBus(1)
@@ -21,6 +22,7 @@ class I2C:
 	@param data - The data to send, the data should only be one byte
 	"""
 	def write2Slave(self, reg, data):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 		try:
 			self.__bus.write_byte_data(self.SLAVE_ADDR, reg, data)
@@ -28,12 +30,15 @@ class I2C:
 			print("i2c write exception ", e)
 			self.write2Slave(reg, data)
 
+		self.__RLOCK.release()
+
 	"""
 	Write several bytes to target
 	@param reg - The target register to write to
 	@param data - The data array containing the data sending to reg
 	"""
 	def writeBytes2Slave(self, reg, data):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 
 		try:
@@ -41,6 +46,7 @@ class I2C:
 		except Exception as e:
 			print("i2c write bytes exception", e)
 			self.writeBytes2Slave(reg, data)
+		self.__RLOCK.release()
 
 	"""
 	Read data from slave. Slave address defined in SLAVE_ADDR. User is responsible
@@ -49,6 +55,7 @@ class I2C:
 	@return A byte size data read from reg
 	"""
 	def readFromSlave(self, reg):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 
 		output = ""
@@ -58,10 +65,12 @@ class I2C:
 		except Exception as e:
 			print("i2c read exception", e)
 			output = self.readFromSlave(reg)
+		self.__RLOCK.release()
 
 		return output
 
 	def read2BytesFromSlave(self, reg):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 		output = ""
 
@@ -70,6 +79,7 @@ class I2C:
 		except Exception as e:
 			print("i2s read 2 bytes exception", e)
 			output = self.read4BytesFromSlave(reg)
+		self.__RLOCK.release()
 	
 		return output
 
@@ -79,6 +89,7 @@ class I2C:
 	@param val - The mount of bytes to read from, shouldn't be more than 32
 	"""
 	def readBytesFromSlave(self, reg, val):
+		self.__RLOCK.acquire()
 		time.sleep(self.__COMMUNICATE_INTERVAL)
 		output = 0 
 		
@@ -87,6 +98,7 @@ class I2C:
 		except Exception as e:
 			print("i2s read 8 bytes exception", e)
 			output = self.readBytesFromSlave(reg, val)
+		self.__RLOCK.release()
 	
 		return output
 
