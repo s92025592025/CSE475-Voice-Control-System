@@ -5,10 +5,11 @@ import concurrent.futures
 
 class Bluetooth:
 	RECEIVE_BUFFER = 1024
-	def __init__(self):
+	def __init__(self, i2c):
 		self.__PORT_NUM = 1
 		self.__KILL_LOCK = threading.Lock()
 		self.__toKill = 0
+		self.__i2c = i2c
 		self.__createSoc()
 
 	"""
@@ -66,8 +67,9 @@ class Bluetooth:
 		try:
 			while True:
 				# Get something from i2c
+				sensor1 = self.__i2c.readSensor1Data()
 
-				self.send("sensor1 8903\0")
+				self.send("sensor1 " + str(sensor1[0]) + "\0")
 		except Exception as e:
 			print("Excpetion in send event: ", e)
 			self.__CLIENT_SOC.close()
