@@ -5,6 +5,7 @@ import concurrent.futures
 
 class Bluetooth:
 	RECEIVE_BUFFER = 1024
+	PACKET_END_MARKER = '\0'
 	def __init__(self, i2c):
 		self.__PORT_NUM = 1
 		self.__KILL_LOCK = threading.Lock()
@@ -46,16 +47,20 @@ class Bluetooth:
 	"""
 	def __setKillLock(self, toKill):
 		self.__KILL_LOCK.acquire()
-		print("in set kill")
 		self.__toKill = toKill
 		self.__KILL_LOCK.release()
-		print("out of setkill")
 
 	def __receiveEvent(self):
+		receiveBuffer = ""
 		try:
 			while True:
-				received = self.__receive()
-				print("Received: ", received)
+				receiveBuffer += self.__receive()
+				print("Received Buffer: ", receiveBuffer)
+
+				packetEnd = receiveBuffer.find(Bluetooth.PACKET_END_MARKER)
+				packet = receiveBuffer[:packetEnd].strip()
+				receiveBuffer = receiveBuffer[packetEnd + 1:]
+				print("Top packet: ", packet)
 
 				# Send something to i2c
 		except Exception as e:
