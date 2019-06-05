@@ -13,7 +13,7 @@ class Bluetooth:
 		self.__createSoc()
 
 	"""
-	Creates socket
+	Create, open, bind, and linsten to socket
 	"""
 	def __createSoc(self):		
 		self.__BT_SOCKET = bluetooth.BluetoothSocket( bluetooth.RFCOMM )
@@ -21,21 +21,23 @@ class Bluetooth:
 		self.__BT_SOCKET.listen(1)
 
 	"""
+	Accects incoming connection in the socket. Sockets needs to be opened, 
+	binded, and linstened to before calling this function
 	"""
-	def acceptCon(self):
+	def __acceptCon(self):
 		self.__CLIENT_SOC, self.__BT_ADDR = self.__BT_SOCKET.accept()
 		print("Accepted connection from ", self.__BT_ADDR)
 
 	"""
 	Receives data from connection
 	"""
-	def receive(self):
+	def __receive(self):
 		return str(self.__CLIENT_SOC.recv(Bluetooth.RECEIVE_BUFFER))
 
 	"""
 	Sends data out to client
 	"""
-	def send(self, out):
+	def __send(self, out):
 		self.__CLIENT_SOC.send(out.encode())
 
 	"""
@@ -52,7 +54,7 @@ class Bluetooth:
 	def __receiveEvent(self):
 		try:
 			while True:
-				received = self.receive()
+				received = self.__receive()
 				print("Received: ", received)
 
 				# Send something to i2c
@@ -67,9 +69,20 @@ class Bluetooth:
 		try:
 			while True:
 				# Get something from i2c
-				sensor1 = self.__i2c.readSensor1Data()
+				sensor1Data = self.__i2c.byteArray2Int(self.__i2c.readSensor1Data())
+				self.__send("sensor1 " + str(sensor1Data) + "\0")
+				sensor2Data = self.__i2c.byteArray2Int(self.__i2c.readSensor2Data())
+				self.__send("sensor2 " + str(sensor2Data) + "\0")
+				sensor3Data = self.__i2c.byteArray2Int(self.__i2c.readSensor3Data())
+				self.__send("sensor3 " + str(sensor3Data) + "\0")
+				sensor4Data = self.__i2c.byteArray2Int(self.__i2c.readSensor4Data())
+				self.__send("sensor3 " + str(sensor3Data) + "\0")
 
-				self.send("sensor1 " + str(sensor1[0]) + "\0")
+				wheel1Data = self.__i2c.byteArray2Int(self.__i2c.readWheel1Data())
+				self.__send("wheel1 " + str(wheel1Data) + "\0")
+				wheel2Data = self.__i2c.byteArray2Int(self.__i2c.readWheel2Data())
+				self.__send("wheel2 " + str(wheel2Data) + "\0")
+
 		except Exception as e:
 			print("Excpetion in send event: ", e)
 			self.__CLIENT_SOC.close()
@@ -81,7 +94,7 @@ class Bluetooth:
 	The bluetooth operation
 	"""
 	def operation(self):
-		self.acceptCon()
+		self.__acceptCon()
 		self.__toKill = 0	
 
 		e = concurrent.futures.ThreadPoolExecutor(max_workers=2)
