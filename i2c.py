@@ -167,6 +167,22 @@ class I2C:
 	def readWheel2Data(self):
 		return self.readBytesFromSlave(Registers.INDEX_WHEEL2_HH, 4)
 
+	"""
+	Takes a four byte array and turn it into a int
+	@param arr - The array that contains four bytes, index 0 is the most
+				 significant bytes
+	@return an int that was made of the four bytes in the arr
+	"""
+	def byteArray2Int(self, arr):
+		output = 0
+
+		output |= arr[0] << 24
+		output |= arr[1] << 16
+		output |= arr[2] << 8
+		output |= arr[3]
+
+		return output
+
 class Registers:
 	# MODE TYPE
 	MODE_AUTO = 0x1
