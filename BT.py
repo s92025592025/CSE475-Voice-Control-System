@@ -75,18 +75,21 @@ class Bluetooth:
 			while True:
 				# Get something from i2c
 				sensor1Data = self.__i2c.byteArray2Int(self.__i2c.readSensor1Data())
-				self.__send("sensor1 " + str(sensor1Data) + "\0")
+				self.__send("sensor1 " + str(sensor1Data) + Bluetooth.PACKET_END_MARKER)
 				sensor2Data = self.__i2c.byteArray2Int(self.__i2c.readSensor2Data())
-				self.__send("sensor2 " + str(sensor2Data) + "\0")
+				self.__send("sensor2 " + str(sensor2Data) + Bluetooth.PACKET_END_MARKER)
 				sensor3Data = self.__i2c.byteArray2Int(self.__i2c.readSensor3Data())
-				self.__send("sensor3 " + str(sensor3Data) + "\0")
+				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.PACKET_END_MARKER)
 				sensor4Data = self.__i2c.byteArray2Int(self.__i2c.readSensor4Data())
-				self.__send("sensor3 " + str(sensor3Data) + "\0")
+				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.PACKET_END_MARKER)
 
 				wheel1Data = self.__i2c.byteArray2Int(self.__i2c.readWheel1Data())
-				self.__send("wheel1 " + str(wheel1Data) + "\0")
+				self.__send("wheel1 " + str(wheel1Data) + Bluetooth.PACKET_END_MARKER)
 				wheel2Data = self.__i2c.byteArray2Int(self.__i2c.readWheel2Data())
-				self.__send("wheel2 " + str(wheel2Data) + "\0")
+				self.__send("wheel2 " + str(wheel2Data) + Bluetooth.PACKET_END_MARKER)
+
+				modeData = self.__i2c.getDriveMode()
+				self.__send("MODE " + str(modeData) + Bluetooth.PACKET_END_MARKER)
 
 		except Exception as e:
 			print("Excpetion in send event: ", e)
