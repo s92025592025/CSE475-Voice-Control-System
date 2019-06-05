@@ -1,4 +1,5 @@
 import sys
+import re
 import bluetooth
 import threading
 import concurrent.futures
@@ -6,6 +7,10 @@ import concurrent.futures
 class Bluetooth:
 	RECEIVE_BUFFER = 1024
 	PACKET_END_MARKER = '\0'
+	JOYSTICK_X_REG = re.compile("X [0-9]+")
+	JOYSTICK_Y_REG = re.compile("Y [0-9]+")
+	SETMODE_REG = re.compile("SETMODE [0-9]+")
+
 	def __init__(self, i2c):
 		self.__PORT_NUM = 1
 		self.__KILL_LOCK = threading.Lock()
@@ -57,18 +62,44 @@ class Bluetooth:
 				receiveBuffer += self.__receive()
 				print("Received Buffer: ", receiveBuffer)
 
-				packetEnd = receiveBuffer.find(Bluetooth.PACKET_END_MARKER)
-				packet = receiveBuffer[:packetEnd].strip()
-				receiveBuffer = receiveBuffer[packetEnd + 1:]
-				print("Top packet: ", packet)
-
 				# Send something to i2c
+				receiveBuffer = self.__processRecvBuffer(receiveBuffer)
+				print("Remaining Buffer: ", receiveBuffer)
 		except Exception as e:
 			print("Excpetion in receive event: ", e)
 			self.__CLIENT_SOC.close()
 			self.__BT_SOCKET.close()
 			self.__setKillLock(1)
 			sys.exit(0)
+
+	"""
+	Takes the buffer received from client, process the commands a much as possible.
+	@param recvBuf - The buffer that the host received
+	@return The rest of the buffer that we can't process
+	"""
+	def __processRecvBuffer(self, recvBuf):
+		packets = recvBuf.split(PACKET_END_MARKER)
+		recvBuf = ""
+		
+		for packet in packets:
+			packet = packet.strip()
+			print("packet: ", packet)
+
+			if Bluetooth.JOYSTICK_X_REG.fullmatch(packet):
+				arr = packet.split(" ")
+				data = int(arr[1]).to_bytes(4, byteorder = 'big')
+				self.__i2c.setJoyStickX(data)
+			elif Bluetooth.JOYSTICK_Y_REG.fullmatch(packet):
+				arr = packet.split(" ")
+				data = int(arr[1]).to_bytes(4, byteorder = 'big')
+				self.__i2c.setJoyStickY(data)
+			elif Bluetooth.SETMODE_REG.futures(packet):
+				arr = packet.split(" ")
+				self.__i2c.changeDriveMode(int(arr[1]))
+			else:
+				recvBuf += packet
+
+		return recvBuf
 
 	def __sendEvent(self):
 		try:
