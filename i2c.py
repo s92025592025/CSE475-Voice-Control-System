@@ -114,6 +114,14 @@ class I2C:
 			self.write2Slave(Registers.INDEX_SET_MODE, mode)
 
 	"""
+	Get the current drive mode from the arduino
+	@return Registers.MODE_AUTO, Registers.MODE_MANUAL or Registers.MODE_OFF
+	"""
+	def getDriveMode(self):
+
+		return self.readFromSlave(Registers.INDEX_MODE)
+
+	"""
 	Sends the data for Joysitck X.
 	@param data - The array of data send to the arduino, the size of the data
 				  should be 4
