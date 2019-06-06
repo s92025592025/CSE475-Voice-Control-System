@@ -10,7 +10,7 @@ class I2C:
 	def __init__(self, slaveAddr):
 		self.__RLOCK = threading.RLock()
 		self.__I2C_CHANNEL = 1
-		self.__COMMUNICATE_INTERVAL = 0.010
+		self.__COMMUNICATE_INTERVAL = 0.015
 		self.__bus = smbus.SMBus(1)
 		self.__REG = bytearray(34)
 		self.SLAVE_ADDR = slaveAddr

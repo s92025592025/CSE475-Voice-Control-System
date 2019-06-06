@@ -89,22 +89,26 @@ class Bluetooth:
 			if Bluetooth.JOYSTICK_X_REG.fullmatch(packet):
 				arr = packet.split(" ")
 				data = int(arr[1])
+				print(data)
 				output = [
 							(data >> 24) & 0xFF, 
 							(data >> 16) & 0xFF, 
 							(data >> 8) & 0xFF,
 							(data) & 0xFF
 						 ]
+				print(output)
 				self.__i2c.setJoyStickX(output)
 			elif Bluetooth.JOYSTICK_Y_REG.fullmatch(packet):
 				arr = packet.split(" ")
 				data = int(arr[1])
+				print(data)
 				output = [
 							(data >> 24) & 0xFF, 
 							(data >> 16) & 0xFF, 
 							(data >> 8) & 0xFF,
 							(data) & 0xFF
 						 ]
+				print(output)
 				self.__i2c.setJoyStickY(output)
 			elif Bluetooth.SETMODE_REG.fullmatch(packet):
 				arr = packet.split(" ")
