@@ -6,7 +6,8 @@ import concurrent.futures
 
 class Bluetooth:
 	RECEIVE_BUFFER = 1024
-	PACKET_END_MARKER = '\0'
+	SEND_PACKET_END_MARKER = '\0'
+	RECV_PACKET_END_MARKER = '\0'
 	JOYSTICK_X_REG = re.compile("X [0-9]+")
 	JOYSTICK_Y_REG = re.compile("Y [0-9]+")
 	SETMODE_REG = re.compile("SETMODE [0-9]+")
@@ -38,7 +39,7 @@ class Bluetooth:
 	Receives data from connection
 	"""
 	def __receive(self):
-		return str(self.__CLIENT_SOC.recv(Bluetooth.RECEIVE_BUFFER))
+		return self.__CLIENT_SOC.recv(Bluetooth.RECEIVE_BUFFER).decode('utf-8')
 
 	"""
 	Sends data out to client
@@ -78,7 +79,7 @@ class Bluetooth:
 	@return The rest of the buffer that we can't process
 	"""
 	def __processRecvBuffer(self, recvBuf):
-		packets = recvBuf.split(PACKET_END_MARKER)
+		packets = recvBuf.split(Bluetooth.RECV_PACKET_END_MARKER)
 		recvBuf = ""
 		
 		for packet in packets:
@@ -87,13 +88,18 @@ class Bluetooth:
 
 			if Bluetooth.JOYSTICK_X_REG.fullmatch(packet):
 				arr = packet.split(" ")
-				data = int(arr[1]).to_bytes(4, byteorder = 'big')
-				self.__i2c.setJoyStickX(data)
+				print("arr[1]: ", int(arr[1]))
+				data = int(arr[1])#.to_bytes(4, byteorder = 'big')
+				output = [(data >> 24) & 0xFF, (data >> 16) & 0xFF, (data >> 8) & 0xFF,
+						(data) & 0xFF]
+				print(data)
+				print("output: ", output)
+				self.__i2c.setJoyStickX(output)
 			elif Bluetooth.JOYSTICK_Y_REG.fullmatch(packet):
 				arr = packet.split(" ")
 				data = int(arr[1]).to_bytes(4, byteorder = 'big')
-				self.__i2c.setJoyStickY(data)
-			elif Bluetooth.SETMODE_REG.futures(packet):
+				#self.__i2c.setJoyStickY(data)
+			elif Bluetooth.SETMODE_REG.fullmatch(packet):
 				arr = packet.split(" ")
 				self.__i2c.changeDriveMode(int(arr[1]))
 			else:
@@ -101,26 +107,34 @@ class Bluetooth:
 
 		return recvBuf
 
+	def __bytesArray2IntArray(self, data):
+		output = []
+
+		for i in range(4):
+			output[i] = int.from_bytes(data[i], 'big')
+
+		return output
+
 	def __sendEvent(self):
 		try:
 			while True:
 				# Get something from i2c
 				sensor1Data = self.__i2c.byteArray2Int(self.__i2c.readSensor1Data())
-				self.__send("sensor1 " + str(sensor1Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("sensor1 " + str(sensor1Data) + Bluetooth.SEND_PACKET_END_MARKER)
 				sensor2Data = self.__i2c.byteArray2Int(self.__i2c.readSensor2Data())
-				self.__send("sensor2 " + str(sensor2Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("sensor2 " + str(sensor2Data) + Bluetooth.SEND_PACKET_END_MARKER)
 				sensor3Data = self.__i2c.byteArray2Int(self.__i2c.readSensor3Data())
-				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.SEND_PACKET_END_MARKER)
 				sensor4Data = self.__i2c.byteArray2Int(self.__i2c.readSensor4Data())
-				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.SEND_PACKET_END_MARKER)
 
 				wheel1Data = self.__i2c.byteArray2Int(self.__i2c.readWheel1Data())
-				self.__send("wheel1 " + str(wheel1Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("wheel1 " + str(wheel1Data) + Bluetooth.SEND_PACKET_END_MARKER)
 				wheel2Data = self.__i2c.byteArray2Int(self.__i2c.readWheel2Data())
-				self.__send("wheel2 " + str(wheel2Data) + Bluetooth.PACKET_END_MARKER)
+				self.__send("wheel2 " + str(wheel2Data) + Bluetooth.SEND_PACKET_END_MARKER)
 
 				modeData = self.__i2c.getDriveMode()
-				self.__send("MODE " + str(modeData) + Bluetooth.PACKET_END_MARKER)
+				self.__send("MODE " + str(modeData) + Bluetooth.SEND_PACKET_END_MARKER)
 
 		except Exception as e:
 			print("Excpetion in send event: ", e)
