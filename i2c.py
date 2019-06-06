@@ -195,7 +195,7 @@ class Registers:
 	# MODE TYPE
 	MODE_AUTO = 0x1
 	MODE_MANUAL = 0x0
-	MODE_OFF = 0x10
+	MODE_OFF = 0x2
 
 	# JOYSTICK X
 	INDEX_X_HH = 0x0
