@@ -8,8 +8,8 @@ class Bluetooth:
 	RECEIVE_BUFFER = 1024
 	SEND_PACKET_END_MARKER = '\0'
 	RECV_PACKET_END_MARKER = '\0'
-	JOYSTICK_X_REG = re.compile("X [0-9]+")
-	JOYSTICK_Y_REG = re.compile("Y [0-9]+")
+	JOYSTICK_X_REG = re.compile("X -?[0-9]+")
+	JOYSTICK_Y_REG = re.compile("Y -?[0-9]+")
 	SETMODE_REG = re.compile("SETMODE [0-9]+")
 
 	def __init__(self, i2c):
@@ -88,17 +88,24 @@ class Bluetooth:
 
 			if Bluetooth.JOYSTICK_X_REG.fullmatch(packet):
 				arr = packet.split(" ")
-				print("arr[1]: ", int(arr[1]))
-				data = int(arr[1])#.to_bytes(4, byteorder = 'big')
-				output = [(data >> 24) & 0xFF, (data >> 16) & 0xFF, (data >> 8) & 0xFF,
-						(data) & 0xFF]
-				print(data)
-				print("output: ", output)
+				data = int(arr[1])
+				output = [
+							(data >> 24) & 0xFF, 
+							(data >> 16) & 0xFF, 
+							(data >> 8) & 0xFF,
+							(data) & 0xFF
+						 ]
 				self.__i2c.setJoyStickX(output)
 			elif Bluetooth.JOYSTICK_Y_REG.fullmatch(packet):
 				arr = packet.split(" ")
-				data = int(arr[1]).to_bytes(4, byteorder = 'big')
-				#self.__i2c.setJoyStickY(data)
+				data = int(arr[1])
+				output = [
+							(data >> 24) & 0xFF, 
+							(data >> 16) & 0xFF, 
+							(data >> 8) & 0xFF,
+							(data) & 0xFF
+						 ]
+				self.__i2c.setJoyStickY(output)
 			elif Bluetooth.SETMODE_REG.fullmatch(packet):
 				arr = packet.split(" ")
 				self.__i2c.changeDriveMode(int(arr[1]))
