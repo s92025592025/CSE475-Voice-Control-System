@@ -10,7 +10,7 @@ class I2C:
 	def __init__(self, slaveAddr):
 		self.__RLOCK = threading.RLock()
 		self.__I2C_CHANNEL = 1
-		self.__COMMUNICATE_INTERVAL = 0.010
+		self.__COMMUNICATE_INTERVAL = 0.015
 		self.__bus = smbus.SMBus(1)
 		self.__REG = bytearray(34)
 		self.SLAVE_ADDR = slaveAddr
@@ -108,8 +108,18 @@ class I2C:
 				  or Registers.MODE_MANUAL
 	"""
 	def changeDriveMode(self, mode):
-		if mode == Registers.MODE_AUTO or mode == Registers.MODE_MANUAL:
+		if (mode == Registers.MODE_AUTO 
+			or mode == Registers.MODE_MANUAL 
+			or mode == Registers.MODE_OFF):
 			self.write2Slave(Registers.INDEX_SET_MODE, mode)
+
+	"""
+	Get the current drive mode from the arduino
+	@return Registers.MODE_AUTO, Registers.MODE_MANUAL or Registers.MODE_OFF
+	"""
+	def getDriveMode(self):
+
+		return self.readFromSlave(Registers.INDEX_MODE)
 
 	"""
 	Sends the data for Joysitck X.
@@ -165,10 +175,27 @@ class I2C:
 	def readWheel2Data(self):
 		return self.readBytesFromSlave(Registers.INDEX_WHEEL2_HH, 4)
 
+	"""
+	Takes a four byte array and turn it into a int
+	@param arr - The array that contains four bytes, index 0 is the most
+				 significant bytes
+	@return an int that was made of the four bytes in the arr
+	"""
+	def byteArray2Int(self, arr):
+		output = 0
+
+		output |= arr[0] << 24
+		output |= arr[1] << 16
+		output |= arr[2] << 8
+		output |= arr[3]
+
+		return output
+
 class Registers:
 	# MODE TYPE
 	MODE_AUTO = 0x1
 	MODE_MANUAL = 0x0
+	MODE_OFF = 0x2
 
 	# JOYSTICK X
 	INDEX_X_HH = 0x0
