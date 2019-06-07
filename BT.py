@@ -137,7 +137,7 @@ class Bluetooth:
 				sensor3Data = self.__i2c.byteArray2Int(self.__i2c.readSensor3Data())
 				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.SEND_PACKET_END_MARKER)
 				sensor4Data = self.__i2c.byteArray2Int(self.__i2c.readSensor4Data())
-				self.__send("sensor3 " + str(sensor3Data) + Bluetooth.SEND_PACKET_END_MARKER)
+				self.__send("sensor4 " + str(sensor4Data) + Bluetooth.SEND_PACKET_END_MARKER)
 
 				wheel1Data = self.__i2c.byteArray2Int(self.__i2c.readWheel1Data())
 				self.__send("wheel1 " + str(wheel1Data) + Bluetooth.SEND_PACKET_END_MARKER)
