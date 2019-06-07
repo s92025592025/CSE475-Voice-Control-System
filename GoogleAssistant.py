@@ -303,6 +303,9 @@ class GoogleAssistant:
 			videoId = self.__youtubePlayer.searchSong(songName)
 			if videoId:
 				self.__youtubePlayer.stop()
+			else:
+				self.__tts.text2Speech("Sorry, I can't find proper " + songName + " to play")
+				return True # If nothing is found, do nothing
 
 			self.__youtubePlayer.add2Front(videoId)
 
@@ -325,6 +328,10 @@ class GoogleAssistant:
 			songName = command[4:-12]
 			print("Add ", songName)
 			videoId = self.__youtubePlayer.searchSong(songName)
+
+			if not videoId:
+				return True # If nothing is found, keep playing current
+
 			self.__youtubePlayer.add2Queue(videoId)
 
 			return True

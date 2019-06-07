@@ -92,6 +92,9 @@ class YoutubePlayer:
 		if response['pageInfo']['totalResults'] <= 0:
 			return None
 
+		if response['items'][0]['snippet']['liveBroadcastContent'] == "live":
+			return None
+
 		# If the first result is a playlist, get the first song of the playlist
 		if response['items'][0]['id']['kind'] == "youtube#playlist":
 			return self.__extractVideoIdFromPlayList(response)
