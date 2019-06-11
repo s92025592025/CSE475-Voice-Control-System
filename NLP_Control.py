@@ -43,6 +43,8 @@ def startNLP(model):
 	signal.signal(signal.SIGINT, signal_handler)
 
 	# The obj contains the hotword detection
+	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DING);
+	snowboydecoder.play_audio_file(snowboydecoder.DETECT_DONG)
 	detector = snowboydecoder.HotwordDetector(model, sensitivity=0.5)
 	print('Listening... Press Ctrl+C to exit')
 
