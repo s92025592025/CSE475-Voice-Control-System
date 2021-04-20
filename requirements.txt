@@ -12,7 +12,7 @@ PyBluez==0.18
 Pykka==1.2.1
 RPi.GPIO==0.6.3
 RTIMULib==7.2.1
-Werkzeug==0.9.6
+Werkzeug==0.15.3
 argparse==1.2.1
 automationhat==0.1.0
 blinker==1.3
