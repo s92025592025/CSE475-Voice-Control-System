@@ -70,6 +70,6 @@ spidev==3.0
 tornado==3.2.2
 touchphat==0.0.1
 twython==3.1.2
-urllib3==1.9.1
+urllib3==1.26.5
 wheel==0.24.0
 wsgiref==0.1.2
