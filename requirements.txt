@@ -26,7 +26,7 @@ envirophat==1.0.0
 fourletterphat==0.1.0
 gpiozero==1.4.0
 gyp==0.1
-html5lib==0.999
+html5lib==0.99999999
 itsdangerous==0.24
 lxkeymap==0.1
 mcpi==0.1.1
